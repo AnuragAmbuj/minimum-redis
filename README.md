@@ -13,9 +13,17 @@ Developed using Grok Code.
 - **Hashes**: HSET, HGET, HDEL, HLEN, HKEYS, HVALS, HGETALL (stub implementations)
 - **Sorted Sets**: ZADD, ZREM, ZCARD, ZRANGE, ZREVRANGE, ZSCORE, ZRANK (stub implementations)
 
+### Transactions
+- **MULTI**: Start a transaction
+- **EXEC**: Execute all queued commands atomically
+- **DISCARD**: Cancel the transaction
+- Atomic operations across multiple commands
+- Error isolation within transactions
+
 ### Core Features
 - **Redis Serialization Protocol (RESP)**: Complete RESP parsing and serialization implementation
 - **Concurrent Connections**: Thread-per-client architecture supporting high concurrency
+- **Transaction Support**: MULTI/EXEC/DISCARD commands for atomic operations
 - **Persistence**: Automatic save/load functionality with configurable intervals (default: 30 seconds)
 - **Type System**: TYPE command for key data type inspection
 - **Error Handling**: Redis-compatible error response format
@@ -103,6 +111,20 @@ TYPE strkey
 TYPE listkey
 ```
 
+#### Transaction Operations
+```bash
+MULTI
+SET key1 value1
+SET key2 value2
+EXEC
+# Returns: OK, OK (both operations executed atomically)
+
+MULTI
+SET temp_key temp_value
+DISCARD
+# Transaction cancelled, key never set
+```
+
 #### Persistence Operations
 ```bash
 SAVE  # Manual persistence
@@ -181,14 +203,17 @@ Developed using Grok Code by xAI.
 
 ## Roadmap
 
+- [x] **Transaction Support**: MULTI/EXEC/DISCARD commands implemented
 - [ ] Complete Sets data structure implementation
 - [ ] Complete Hashes data structure implementation
 - [ ] Complete Sorted Sets data structure implementation
+- [ ] WATCH/UNWATCH commands for optimistic concurrency
+- [ ] Key expiration (TTL, EXPIRE, PEXPIRE commands)
 - [ ] Disk-based persistence (RDB/AOF formats)
 - [ ] Publish/Subscribe functionality
 - [ ] Clustering capabilities
 - [ ] Lua scripting engine
-- [ ] Comprehensive test suite
+- [x] **Comprehensive test suite**: 90 tests with 100% pass rate
 
 ---
 

@@ -8,10 +8,21 @@
 #include "resp.h"
 #include "db.h"
 #include <string>
+#include <queue>
+#include <functional>
+
+// Transaction command representation
+struct TransactionCommand {
+    std::string command_name;
+    std::vector<std::shared_ptr<RespValue>> args;
+    std::function<std::string()> execute_func;
+};
 
 class CommandProcessor {
 private:
     Database& db;
+    std::queue<TransactionCommand> transaction_queue;
+    bool in_transaction = false;
 
     std::string handle_set(const std::vector<std::shared_ptr<RespValue>>& args);
     std::string handle_get(const std::vector<std::shared_ptr<RespValue>>& args);
@@ -57,6 +68,11 @@ private:
     std::string handle_zrevrange(const std::vector<std::shared_ptr<RespValue>>& args);
     std::string handle_zscore(const std::vector<std::shared_ptr<RespValue>>& args);
     std::string handle_zrank(const std::vector<std::shared_ptr<RespValue>>& args);
+
+    // Transaction commands
+    std::string handle_multi(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_exec(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_discard(const std::vector<std::shared_ptr<RespValue>>& args);
 
 public:
     CommandProcessor(Database& database) : db(database) {}

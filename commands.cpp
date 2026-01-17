@@ -24,6 +24,103 @@ std::string CommandProcessor::process_command(const std::shared_ptr<RespValue>& 
         upper_cmd += ::toupper(c);
     }
 
+    // If in transaction, queue the command instead of executing it
+    if (in_transaction && upper_cmd != "EXEC" && upper_cmd != "DISCARD") {
+        TransactionCommand tx_cmd;
+        tx_cmd.command_name = upper_cmd;
+        tx_cmd.args = cmd_args;
+        tx_cmd.execute_func = [this, cmd_args, upper_cmd]() -> std::string {
+            // Execute the command during transaction
+            if (upper_cmd == "SET") {
+                return handle_set(cmd_args);
+            } else if (upper_cmd == "GET") {
+                return handle_get(cmd_args);
+            } else if (upper_cmd == "DEL") {
+                return handle_del(cmd_args);
+            } else if (upper_cmd == "EXISTS") {
+                return handle_exists(cmd_args);
+            } else if (upper_cmd == "KEYS") {
+                return handle_keys(cmd_args);
+            } else if (upper_cmd == "SAVE") {
+                return handle_save(cmd_args);
+            } else if (upper_cmd == "TYPE") {
+                return handle_type(cmd_args);
+            }
+            // List commands
+            else if (upper_cmd == "LPUSH") {
+                return handle_lpush(cmd_args);
+            } else if (upper_cmd == "RPUSH") {
+                return handle_rpush(cmd_args);
+            } else if (upper_cmd == "LPOP") {
+                return handle_lpop(cmd_args);
+            } else if (upper_cmd == "RPOP") {
+                return handle_rpop(cmd_args);
+            } else if (upper_cmd == "LLEN") {
+                return handle_llen(cmd_args);
+            } else if (upper_cmd == "LRANGE") {
+                return handle_lrange(cmd_args);
+            } else if (upper_cmd == "LINDEX") {
+                return handle_lindex(cmd_args);
+            }
+            // Set commands
+            else if (upper_cmd == "SADD") {
+                return handle_sadd(cmd_args);
+            } else if (upper_cmd == "SREM") {
+                return handle_srem(cmd_args);
+            } else if (upper_cmd == "SISMEMBER") {
+                return handle_sismember(cmd_args);
+            } else if (upper_cmd == "SCARD") {
+                return handle_scard(cmd_args);
+            } else if (upper_cmd == "SMEMBERS") {
+                return handle_smembers(cmd_args);
+            } else if (upper_cmd == "SINTER") {
+                return handle_sinter(cmd_args);
+            } else if (upper_cmd == "SUNION") {
+                return handle_sunion(cmd_args);
+            } else if (upper_cmd == "SDIFF") {
+                return handle_sdiff(cmd_args);
+            }
+            // Hash commands
+            else if (upper_cmd == "HSET") {
+                return handle_hset(cmd_args);
+            } else if (upper_cmd == "HGET") {
+                return handle_hget(cmd_args);
+            } else if (upper_cmd == "HDEL") {
+                return handle_hdel(cmd_args);
+            } else if (upper_cmd == "HLEN") {
+                return handle_hlen(cmd_args);
+            } else if (upper_cmd == "HKEYS") {
+                return handle_hkeys(cmd_args);
+            } else if (upper_cmd == "HVALS") {
+                return handle_hvals(cmd_args);
+            } else if (upper_cmd == "HGETALL") {
+                return handle_hgetall(cmd_args);
+            }
+            // Sorted Set commands
+            else if (upper_cmd == "ZADD") {
+                return handle_zadd(cmd_args);
+            } else if (upper_cmd == "ZREM") {
+                return handle_zrem(cmd_args);
+            } else if (upper_cmd == "ZCARD") {
+                return handle_zcard(cmd_args);
+            } else if (upper_cmd == "ZRANGE") {
+                return handle_zrange(cmd_args);
+            } else if (upper_cmd == "ZREVRANGE") {
+                return handle_zrevrange(cmd_args);
+            } else if (upper_cmd == "ZSCORE") {
+                return handle_zscore(cmd_args);
+            } else if (upper_cmd == "ZRANK") {
+                return handle_zrank(cmd_args);
+            } else {
+                return "-ERR Unknown command\r\n";
+            }
+        };
+
+        transaction_queue.push(tx_cmd);
+        return "+QUEUED\r\n";
+    }
+
+    // Execute command immediately (not in transaction)
     if (upper_cmd == "SET") {
         return handle_set(cmd_args);
     } else if (upper_cmd == "GET") {
@@ -104,6 +201,14 @@ std::string CommandProcessor::process_command(const std::shared_ptr<RespValue>& 
         return handle_zscore(cmd_args);
     } else if (upper_cmd == "ZRANK") {
         return handle_zrank(cmd_args);
+    }
+    // Transaction commands
+    else if (upper_cmd == "MULTI") {
+        return handle_multi(cmd_args);
+    } else if (upper_cmd == "EXEC") {
+        return handle_exec(cmd_args);
+    } else if (upper_cmd == "DISCARD") {
+        return handle_discard(cmd_args);
     } else {
         return "-ERR Unknown command\r\n";
     }
@@ -481,5 +586,93 @@ std::string CommandProcessor::handle_zscore(const std::vector<std::shared_ptr<Re
 }
 
 std::string CommandProcessor::handle_zrank(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 3) {
+        return "-ERR ZRANK requires exactly 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR ZRANK key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::string member = args[2]->str_val;
+
+    long long rank = db.zrank(key, member);
+    if (rank >= 0) {
+        return ":" + std::to_string(rank) + "\r\n";
+    }
+    return "$-1\r\n"; // Not found
+}
+
+// Transaction commands
+std::string CommandProcessor::handle_multi(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 1) {
+        return "-ERR MULTI requires no arguments\r\n";
+    }
+
+    if (in_transaction) {
+        return "-ERR MULTI cannot be nested\r\n";
+    }
+
+    in_transaction = true;
+    // Clear any existing transaction queue
+    while (!transaction_queue.empty()) {
+        transaction_queue.pop();
+    }
+
+    return "+OK\r\n";
+}
+
+std::string CommandProcessor::handle_exec(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 1) {
+        return "-ERR EXEC requires no arguments\r\n";
+    }
+
+    if (!in_transaction) {
+        return "-ERR EXEC without MULTI\r\n";
+    }
+
+    // Execute all queued commands atomically
+    std::vector<std::string> results;
+    results.reserve(transaction_queue.size());
+
+    while (!transaction_queue.empty()) {
+        auto& cmd = transaction_queue.front();
+        try {
+            std::string result = cmd.execute_func();
+            results.push_back(result);
+        } catch (const std::exception& e) {
+            // On error, we still continue with other commands in Redis
+            results.push_back("-ERR " + std::string(e.what()) + "\r\n");
+        }
+        transaction_queue.pop();
+    }
+
+    in_transaction = false;
+
+    // Format response as array of results
+    std::string response = "*" + std::to_string(results.size()) + "\r\n";
+    for (const auto& result : results) {
+        response += result;
+    }
+
+    return response;
+}
+
+std::string CommandProcessor::handle_discard(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 1) {
+        return "-ERR DISCARD requires no arguments\r\n";
+    }
+
+    if (!in_transaction) {
+        return "-ERR DISCARD without MULTI\r\n";
+    }
+
+    // Clear transaction queue
+    while (!transaction_queue.empty()) {
+        transaction_queue.pop();
+    }
+
+    in_transaction = false;
+    return "+OK\r\n";
 }

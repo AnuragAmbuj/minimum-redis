@@ -23,6 +23,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <fstream>
+#include <sstream>
 
 // Redis protocol parsing (simplified)
 class RespParser {
@@ -224,9 +226,31 @@ private:
     size_t history_index = 0;
     std::string current_input;
     size_t cursor_pos = 0;
+    std::vector<std::string> completion_candidates;
+    size_t completion_index = 0;
+    std::string completion_prefix;
 
     bool pubsub_mode = false;
     bool running = true;
+
+    std::vector<std::string> redis_commands = {
+        "SET", "GET", "DEL", "EXISTS", "KEYS", "TYPE", "RENAME", "RENAMENX",
+        "LPUSH", "RPUSH", "LPOP", "RPOP", "LLEN", "LRANGE", "LINDEX", "LSET", "LTRIM",
+        "SADD", "SREM", "SISMEMBER", "SCARD", "SMEMBERS", "SUNION", "SINTER", "SDIFF",
+        "HSET", "HGET", "HDEL", "HLEN", "HKEYS", "HVALS", "HGETALL", "HEXISTS",
+        "ZADD", "ZREM", "ZCARD", "ZRANGE", "ZREVRANGE", "ZSCORE", "ZRANK",
+        "MULTI", "EXEC", "DISCARD", "WATCH", "UNWATCH",
+        "EXPIRE", "PEXPIRE", "TTL", "PTTL", "PERSIST", "EXPIREAT", "PEXPIREAT",
+        "SUBSCRIBE", "PUBLISH", "UNSUBSCRIBE", "PSUBSCRIBE", "PUNSUBSCRIBE",
+        "EVAL", "EVALSHA", "SCRIPT",
+        "SAVE", "BGSAVE", "LASTSAVE", "FLUSHDB", "FLUSHALL", "DBSIZE",
+        "INFO", "CLIENT", "CONFIG", "DEBUG", "COMMAND", "MEMORY"
+    };
+
+    void update_completion_candidates();
+    void perform_tab_completion();
+    void save_history_to_file();
+    void load_history_from_file();
 
     void init_curses() {
         initscr();
@@ -290,8 +314,15 @@ private:
             wattroff(status_win, COLOR_PAIR(5));
         }
 
-        wprintw(status_win, " | History: %zu | F1: Help | F2: Connect/Disconnect | F3: Clear | F10: Quit",
+        wprintw(status_win, " | History: %zu | F1: Help | F2: Connect/Disconnect | F3: Clear | TAB: Complete | F10: Quit",
                command_history.size());
+
+        if (!completion_candidates.empty()) {
+            wprintw(status_win, " | Complete: %s (%zu/%zu)",
+                   completion_candidates[completion_index % completion_candidates.size()].c_str(),
+                   (completion_index % completion_candidates.size()) + 1,
+                   completion_candidates.size());
+        }
         wrefresh(status_win);
     }
 
@@ -452,11 +483,10 @@ private:
 
             case KEY_F(1): // Help
                 add_to_output("=== MinimalRedis TUI Client Help ===");
-                add_to_output("F1: This help | F2: Connect/Disconnect");
-                add_to_output("F3: Clear output | F10: Quit");
-                add_to_output("Arrow keys: Navigate input/history");
-                add_to_output("Enter: Execute command");
-                add_to_output("Commands: SET, GET, DEL, KEYS, etc.");
+                add_to_output("F1: Help | F2: Connect/Disconnect | F3: Clear | F10: Quit");
+                add_to_output("TAB: Auto-complete commands | Arrows: Navigate history");
+                add_to_output("Enter: Execute command | Backspace/Delete: Edit input");
+                add_to_output("Available commands: SET, GET, DEL, KEYS, LPUSH, etc.");
                 break;
 
             case KEY_F(2): // Connect/Disconnect
@@ -482,6 +512,11 @@ private:
                 running = false;
                 break;
 
+            case '\t':
+            case KEY_STAB:
+                perform_tab_completion();
+                break;
+
             default:
                 if (ch >= 32 && ch <= 126) { // Printable characters
                     current_input.insert(cursor_pos, 1, ch);
@@ -496,6 +531,7 @@ public:
         : client(host, port) {}
 
     ~TUIClient() {
+        save_history_to_file();
         client.stop();
         if (main_win) delwin(main_win);
         if (input_win) delwin(input_win);
@@ -505,11 +541,11 @@ public:
     }
 
     void run() {
+        load_history_from_file();
         init_curses();
         create_windows();
 
-        // Initial connection
-                    if (client.connect_to_server()) {
+        if (client.connect_to_server()) {
             add_to_output("Connected to MinimalRedis server");
         } else {
             add_to_output("Failed to connect to server - press F2 to retry");
@@ -563,4 +599,94 @@ int main(int argc, char* argv[]) {
     }
 
     return 0;
+}
+
+void TUIClient::update_completion_candidates() {
+    completion_candidates.clear();
+    completion_index = 0;
+
+    if (current_input.empty()) return;
+
+    size_t word_start = current_input.rfind(' ', cursor_pos);
+    if (word_start == std::string::npos) {
+        word_start = 0;
+    } else {
+        word_start++;
+    }
+
+    completion_prefix = current_input.substr(word_start, cursor_pos - word_start);
+
+    if (completion_prefix.empty()) return;
+
+    for (const auto& cmd : redis_commands) {
+        if (cmd.find(completion_prefix) == 0) {
+            completion_candidates.push_back(cmd);
+        }
+    }
+
+    if (completion_prefix.length() >= 2 && client.is_connected()) {
+        std::string keys_cmd = "KEYS " + completion_prefix + "*";
+        client.send_command(keys_cmd);
+    }
+}
+
+void TUIClient::perform_tab_completion() {
+    update_completion_candidates();
+
+    if (completion_candidates.empty()) return;
+
+    std::string completion = completion_candidates[completion_index % completion_candidates.size()];
+
+    size_t word_start = current_input.rfind(' ', cursor_pos);
+    if (word_start == std::string::npos) {
+        word_start = 0;
+    } else {
+        word_start++;
+    }
+
+    size_t word_end = current_input.find(' ', cursor_pos);
+    if (word_end == std::string::npos) {
+        word_end = current_input.length();
+    }
+
+    current_input.replace(word_start, word_end - word_start, completion);
+    cursor_pos = word_start + completion.length();
+
+    completion_index++;
+}
+
+void TUIClient::save_history_to_file() {
+    const char* home = getenv("HOME");
+    if (!home) return;
+
+    std::string history_file = std::string(home) + "/.redis_tui_history";
+
+    std::ofstream file(history_file);
+    if (!file.is_open()) return;
+
+    size_t start = command_history.size() > 100 ? command_history.size() - 100 : 0;
+    for (size_t i = start; i < command_history.size(); ++i) {
+        file << command_history[i] << std::endl;
+    }
+    file.close();
+}
+
+void TUIClient::load_history_from_file() {
+    const char* home = getenv("HOME");
+    if (!home) return;
+
+    std::string history_file = std::string(home) + "/.redis_tui_history";
+
+    std::ifstream file(history_file);
+    if (!file.is_open()) return;
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (!line.empty()) {
+            command_history.push_back(line);
+        }
+    }
+    file.close();
+
+    history_index = command_history.size();
 }

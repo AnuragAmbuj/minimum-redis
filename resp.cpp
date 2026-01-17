@@ -49,18 +49,29 @@ std::shared_ptr<RespValue> RespParser::parse_error() {
 std::shared_ptr<RespValue> RespParser::parse_integer() {
     auto val = std::make_shared<RespValue>(RespType::Integer);
     std::string line = read_line();
-    val->int_val = std::stoll(line);
+    try {
+        val->int_val = std::stoll(line);
+    } catch (const std::exception&) {
+        throw std::runtime_error("Invalid integer format");
+    }
     return val;
 }
 
 std::shared_ptr<RespValue> RespParser::parse_bulk_string() {
     std::string length_str = read_line();
-    size_t length = std::stoul(length_str);
 
-    if (length == 0) {
+    // Handle null bulk string
+    if (length_str == "-1") {
         auto val = std::make_shared<RespValue>(RespType::BulkString);
-        val->str_val = "";
+        val->str_val = "";  // Null bulk string represented as empty string
         return val;
+    }
+
+    size_t length;
+    try {
+        length = std::stoul(length_str);
+    } catch (const std::exception&) {
+        throw std::runtime_error("Invalid bulk string length");
     }
 
     auto val = std::make_shared<RespValue>(RespType::BulkString);
@@ -70,7 +81,12 @@ std::shared_ptr<RespValue> RespParser::parse_bulk_string() {
 
 std::shared_ptr<RespValue> RespParser::parse_array() {
     std::string count_str = read_line();
-    size_t count = std::stoul(count_str);
+    size_t count;
+    try {
+        count = std::stoul(count_str);
+    } catch (const std::exception&) {
+        throw std::runtime_error("Invalid array length");
+    }
 
     auto val = std::make_shared<RespValue>(RespType::Array);
     val->array_val.reserve(count);

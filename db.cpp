@@ -50,18 +50,18 @@ std::vector<std::string> Database::keys() {
 }
 
 // List operations
-bool Database::lpush(const std::string& key, const std::vector<std::string>& values) {
+size_t Database::lpush(const std::string& key, const std::vector<std::string>& values) {
     auto& val = data[key];
     val.type = RedisType::List;
     val.list_val.insert(val.list_val.begin(), values.rbegin(), values.rend());
-    return true;
+    return val.list_val.size();
 }
 
-bool Database::rpush(const std::string& key, const std::vector<std::string>& values) {
+size_t Database::rpush(const std::string& key, const std::vector<std::string>& values) {
     auto& val = data[key];
     val.type = RedisType::List;
     val.list_val.insert(val.list_val.end(), values.begin(), values.end());
-    return true;
+    return val.list_val.size();
 }
 
 std::string Database::lpop(const std::string& key) {

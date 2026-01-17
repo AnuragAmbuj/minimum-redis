@@ -27,8 +27,8 @@ public:
     RedisType type(const std::string& key);
 
     // List operations
-    bool lpush(const std::string& key, const std::vector<std::string>& values);
-    bool rpush(const std::string& key, const std::vector<std::string>& values);
+    size_t lpush(const std::string& key, const std::vector<std::string>& values);
+    size_t rpush(const std::string& key, const std::vector<std::string>& values);
     std::string lpop(const std::string& key);
     std::string rpop(const std::string& key);
     size_t llen(const std::string& key);

@@ -138,11 +138,12 @@ std::string CommandProcessor::handle_get(const std::vector<std::shared_ptr<RespV
     }
 
     std::string key = args[1]->str_val;
-    std::string value = db.get(key);
 
-    if (value.empty() && !db.exists(key)) {
-        return "$-1\r\n"; // Null bulk string for non-existent key
+    if (!db.exists(key) || db.type(key) != RedisType::String) {
+        return "$-1\r\n"; // Null bulk string for non-existent key or wrong type
     }
+
+    std::string value = db.get(key);
 
     return "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
 }
@@ -215,16 +216,20 @@ std::string CommandProcessor::handle_type(const std::vector<std::shared_ptr<Resp
     }
 
     std::string key = args[1]->str_val;
-    RedisType type = db.type(key);
 
     std::string type_str;
-    switch (type) {
-        case RedisType::String: type_str = "string"; break;
-        case RedisType::List: type_str = "list"; break;
-        case RedisType::Set: type_str = "set"; break;
-        case RedisType::Hash: type_str = "hash"; break;
-        case RedisType::ZSet: type_str = "zset"; break;
-        default: type_str = "none"; break;
+    if (!db.exists(key)) {
+        type_str = "none";
+    } else {
+        RedisType type = db.type(key);
+        switch (type) {
+            case RedisType::String: type_str = "string"; break;
+            case RedisType::List: type_str = "list"; break;
+            case RedisType::Set: type_str = "set"; break;
+            case RedisType::Hash: type_str = "hash"; break;
+            case RedisType::ZSet: type_str = "zset"; break;
+            default: type_str = "none"; break;
+        }
     }
 
     return "+" + type_str + "\r\n";

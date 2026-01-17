@@ -1,0 +1,16 @@
+# Build files
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+MinimalRedisTests
+
+# Compiled executables
+redis-tui-client
+
+# Temporary files
+*.tmp
+*.swp
+*.bak

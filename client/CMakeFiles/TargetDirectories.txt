@@ -1,6 +1,0 @@
-/Users/anuragambuj/CLionProjects/MinimalRedis/client/CMakeFiles/MinimalRedis.dir
-/Users/anuragambuj/CLionProjects/MinimalRedis/client/CMakeFiles/MinimalRedisTests.dir
-/Users/anuragambuj/CLionProjects/MinimalRedis/client/CMakeFiles/coverage.dir
-/Users/anuragambuj/CLionProjects/MinimalRedis/client/CMakeFiles/test.dir
-/Users/anuragambuj/CLionProjects/MinimalRedis/client/CMakeFiles/edit_cache.dir
-/Users/anuragambuj/CLionProjects/MinimalRedis/client/CMakeFiles/rebuild_cache.dir

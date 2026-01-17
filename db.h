@@ -36,8 +36,8 @@ public:
     std::string lindex(const std::string& key, int index);
 
     // Set operations
-    bool sadd(const std::string& key, const std::vector<std::string>& members);
-    bool srem(const std::string& key, const std::vector<std::string>& members);
+    size_t sadd(const std::string& key, const std::vector<std::string>& members);
+    size_t srem(const std::string& key, const std::vector<std::string>& members);
     bool sismember(const std::string& key, const std::string& member);
     size_t scard(const std::string& key);
     std::vector<std::string> smembers(const std::string& key);

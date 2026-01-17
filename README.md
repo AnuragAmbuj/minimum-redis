@@ -9,9 +9,9 @@ Developed using Grok Code.
 ### Data Structures
 - **Strings**: SET, GET, DEL, EXISTS
 - **Lists**: LPUSH, RPUSH, LPOP, RPOP, LLEN, LRANGE, LINDEX
-- **Sets**: SADD, SREM, SISMEMBER, SCARD, SMEMBERS, SINTER, SUNION, SDIFF (stub implementations)
-- **Hashes**: HSET, HGET, HDEL, HLEN, HKEYS, HVALS, HGETALL (stub implementations)
-- **Sorted Sets**: ZADD, ZREM, ZCARD, ZRANGE, ZREVRANGE, ZSCORE, ZRANK (stub implementations)
+- **Sets**: SADD, SREM, SISMEMBER, SCARD, SMEMBERS, SINTER, SUNION, SDIFF
+- **Hashes**: HSET, HGET, HDEL, HLEN, HKEYS, HVALS, HGETALL
+- **Sorted Sets**: ZADD, ZREM, ZCARD, ZRANGE, ZREVRANGE, ZSCORE, ZRANK
 
 ### Transactions
 - **MULTI**: Start a transaction

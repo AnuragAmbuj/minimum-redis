@@ -129,24 +129,24 @@ std::string Database::lindex(const std::string& key, int index) {
 }
 
 // Set operations
-bool Database::sadd(const std::string& key, const std::vector<std::string>& members) {
+size_t Database::sadd(const std::string& key, const std::vector<std::string>& members) {
     auto& val = data[key];
     val.type = RedisType::Set;
     size_t before = val.set_val.size();
     val.set_val.insert(members.begin(), members.end());
-    return val.set_val.size() > before;
+    return val.set_val.size() - before;
 }
 
-bool Database::srem(const std::string& key, const std::vector<std::string>& members) {
+size_t Database::srem(const std::string& key, const std::vector<std::string>& members) {
     auto it = data.find(key);
     if (it != data.end() && it->second.type == RedisType::Set) {
         size_t before = it->second.set_val.size();
         for (const auto& member : members) {
             it->second.set_val.erase(member);
         }
-        return it->second.set_val.size() < before;
+        return before - it->second.set_val.size();
     }
-    return false;
+    return 0;
 }
 
 bool Database::sismember(const std::string& key, const std::string& member) {

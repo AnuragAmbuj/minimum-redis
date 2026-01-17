@@ -498,91 +498,483 @@ std::string CommandProcessor::handle_lindex(const std::vector<std::shared_ptr<Re
     return "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
 }
 
-// Set commands - stub implementations
+// Set commands
 std::string CommandProcessor::handle_sadd(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 3) {
+        return "-ERR SADD requires at least 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR SADD key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::vector<std::string> members;
+
+    for (size_t i = 2; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR SADD members must be bulk strings\r\n";
+        }
+        members.push_back(args[i]->str_val);
+    }
+
+    size_t added_count = db.sadd(key, members);
+    return ":" + std::to_string(added_count) + "\r\n";
 }
 
 std::string CommandProcessor::handle_srem(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 3) {
+        return "-ERR SREM requires at least 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR SREM key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::vector<std::string> members;
+
+    for (size_t i = 2; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR SREM members must be bulk strings\r\n";
+        }
+        members.push_back(args[i]->str_val);
+    }
+
+    size_t removed_count = db.srem(key, members);
+    return ":" + std::to_string(removed_count) + "\r\n";
 }
 
 std::string CommandProcessor::handle_sismember(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 3) {
+        return "-ERR SISMEMBER requires exactly 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString || args[2]->type != RespType::BulkString) {
+        return "-ERR SISMEMBER arguments must be bulk strings\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::string member = args[2]->str_val;
+
+    bool is_member = db.sismember(key, member);
+    return ":" + std::to_string(is_member ? 1 : 0) + "\r\n";
 }
 
 std::string CommandProcessor::handle_scard(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 2) {
+        return "-ERR SCARD requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR SCARD key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    size_t cardinality = db.scard(key);
+    return ":" + std::to_string(cardinality) + "\r\n";
 }
 
 std::string CommandProcessor::handle_smembers(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 2) {
+        return "-ERR SMEMBERS requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR SMEMBERS key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::vector<std::string> members = db.smembers(key);
+
+    std::string response = "*" + std::to_string(members.size()) + "\r\n";
+    for (const auto& member : members) {
+        response += "$" + std::to_string(member.length()) + "\r\n" + member + "\r\n";
+    }
+
+    return response;
 }
 
 std::string CommandProcessor::handle_sinter(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 2) {
+        return "-ERR SINTER requires at least 1 argument\r\n";
+    }
+
+    std::vector<std::string> keys;
+    for (size_t i = 1; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR SINTER keys must be bulk strings\r\n";
+        }
+        keys.push_back(args[i]->str_val);
+    }
+
+    std::vector<std::string> intersection = db.sinter(keys);
+
+    std::string response = "*" + std::to_string(intersection.size()) + "\r\n";
+    for (const auto& member : intersection) {
+        response += "$" + std::to_string(member.length()) + "\r\n" + member + "\r\n";
+    }
+
+    return response;
 }
 
 std::string CommandProcessor::handle_sunion(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 2) {
+        return "-ERR SUNION requires at least 1 argument\r\n";
+    }
+
+    std::vector<std::string> keys;
+    for (size_t i = 1; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR SUNION keys must be bulk strings\r\n";
+        }
+        keys.push_back(args[i]->str_val);
+    }
+
+    std::vector<std::string> union_result = db.sunion(keys);
+
+    std::string response = "*" + std::to_string(union_result.size()) + "\r\n";
+    for (const auto& member : union_result) {
+        response += "$" + std::to_string(member.length()) + "\r\n" + member + "\r\n";
+    }
+
+    return response;
 }
 
 std::string CommandProcessor::handle_sdiff(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 2) {
+        return "-ERR SDIFF requires at least 1 argument\r\n";
+    }
+
+    std::vector<std::string> keys;
+    for (size_t i = 1; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR SDIFF keys must be bulk strings\r\n";
+        }
+        keys.push_back(args[i]->str_val);
+    }
+
+    std::vector<std::string> difference = db.sdiff(keys);
+
+    std::string response = "*" + std::to_string(difference.size()) + "\r\n";
+    for (const auto& member : difference) {
+        response += "$" + std::to_string(member.length()) + "\r\n" + member + "\r\n";
+    }
+
+    return response;
 }
 
-// Hash commands - stub implementations
+// Hash commands
 std::string CommandProcessor::handle_hset(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 4 || (args.size() % 2) != 0) {
+        return "-ERR HSET requires an even number of arguments (at least key, field, value)\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR HSET key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    size_t fields_set = 0;
+
+    for (size_t i = 2; i < args.size(); i += 2) {
+        if (args[i]->type != RespType::BulkString || args[i + 1]->type != RespType::BulkString) {
+            return "-ERR HSET field and value must be bulk strings\r\n";
+        }
+
+        std::string field = args[i]->str_val;
+        std::string value = args[i + 1]->str_val;
+
+        bool field_set = db.hset(key, field, value);
+        if (field_set) {
+            fields_set++;
+        }
+    }
+
+    return ":" + std::to_string(fields_set) + "\r\n";
 }
 
 std::string CommandProcessor::handle_hget(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 3) {
+        return "-ERR HGET requires exactly 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString || args[2]->type != RespType::BulkString) {
+        return "-ERR HGET key and field must be bulk strings\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::string field = args[2]->str_val;
+
+    std::string value = db.hget(key, field);
+    if (value.empty() && db.exists(key) && db.type(key) == RedisType::Hash) {
+        // Field doesn't exist in hash
+        return "$-1\r\n";
+    } else if (value.empty()) {
+        // Key doesn't exist
+        return "$-1\r\n";
+    }
+
+    return "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
 }
 
 std::string CommandProcessor::handle_hdel(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 3) {
+        return "-ERR HDEL requires at least 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR HDEL key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::vector<std::string> fields;
+
+    for (size_t i = 2; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR HDEL fields must be bulk strings\r\n";
+        }
+        fields.push_back(args[i]->str_val);
+    }
+
+    size_t fields_deleted = db.hdel(key, fields);
+    return ":" + std::to_string(fields_deleted) + "\r\n";
 }
 
 std::string CommandProcessor::handle_hlen(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 2) {
+        return "-ERR HLEN requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR HLEN key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    size_t length = db.hlen(key);
+    return ":" + std::to_string(length) + "\r\n";
 }
 
 std::string CommandProcessor::handle_hkeys(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 2) {
+        return "-ERR HKEYS requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR HKEYS key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::vector<std::string> keys = db.hkeys(key);
+
+    std::string response = "*" + std::to_string(keys.size()) + "\r\n";
+    for (const auto& key_name : keys) {
+        response += "$" + std::to_string(key_name.length()) + "\r\n" + key_name + "\r\n";
+    }
+
+    return response;
 }
 
 std::string CommandProcessor::handle_hvals(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 2) {
+        return "-ERR HVALS requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR HVALS key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::vector<std::string> values = db.hvals(key);
+
+    std::string response = "*" + std::to_string(values.size()) + "\r\n";
+    for (const auto& value : values) {
+        response += "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
+    }
+
+    return response;
 }
 
 std::string CommandProcessor::handle_hgetall(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 2) {
+        return "-ERR HGETALL requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR HGETALL key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    auto hash = db.hgetall(key);
+
+    std::string response = "*" + std::to_string(hash.size() * 2) + "\r\n";
+    for (const auto& pair : hash) {
+        // Field
+        response += "$" + std::to_string(pair.first.length()) + "\r\n" + pair.first + "\r\n";
+        // Value
+        response += "$" + std::to_string(pair.second.length()) + "\r\n" + pair.second + "\r\n";
+    }
+
+    return response;
 }
 
-// Sorted Set commands - stub implementations
+// Sorted Set commands
 std::string CommandProcessor::handle_zadd(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 4 || (args.size() % 2) != 0) {
+        return "-ERR ZADD requires an even number of arguments (at least key, score, member)\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR ZADD key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::vector<std::pair<double, std::string>> members;
+
+    for (size_t i = 2; i < args.size(); i += 2) {
+        if (args[i]->type != RespType::BulkString || args[i + 1]->type != RespType::BulkString) {
+            return "-ERR ZADD score and member must be bulk strings\r\n";
+        }
+
+        try {
+            double score = std::stod(args[i]->str_val);
+            std::string member = args[i + 1]->str_val;
+            members.emplace_back(score, member);
+        } catch (const std::exception&) {
+            return "-ERR ZADD score must be a valid number\r\n";
+        }
+    }
+
+    size_t members_added = db.zadd(key, members);
+    return ":" + std::to_string(members_added) + "\r\n";
 }
 
 std::string CommandProcessor::handle_zrem(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 3) {
+        return "-ERR ZREM requires at least 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR ZREM key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::vector<std::string> members;
+
+    for (size_t i = 2; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR ZREM members must be bulk strings\r\n";
+        }
+        members.push_back(args[i]->str_val);
+    }
+
+    size_t members_removed = db.zrem(key, members);
+    return ":" + std::to_string(members_removed) + "\r\n";
 }
 
 std::string CommandProcessor::handle_zcard(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 2) {
+        return "-ERR ZCARD requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR ZCARD key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    size_t cardinality = db.zcard(key);
+    return ":" + std::to_string(cardinality) + "\r\n";
 }
 
 std::string CommandProcessor::handle_zrange(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 4) {
+        return "-ERR ZRANGE requires at least 3 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR ZRANGE key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+
+    int start, end;
+    try {
+        start = std::stoi(args[2]->str_val);
+        end = std::stoi(args[3]->str_val);
+    } catch (const std::exception&) {
+        return "-ERR ZRANGE start and end must be integers\r\n";
+    }
+
+    std::vector<std::string> range = db.zrange(key, start, end);
+
+    std::string response = "*" + std::to_string(range.size()) + "\r\n";
+    for (const auto& member : range) {
+        response += "$" + std::to_string(member.length()) + "\r\n" + member + "\r\n";
+    }
+
+    return response;
 }
 
 std::string CommandProcessor::handle_zrevrange(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() < 4) {
+        return "-ERR ZREVRANGE requires at least 3 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR ZREVRANGE key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+
+    int start, end;
+    try {
+        start = std::stoi(args[2]->str_val);
+        end = std::stoi(args[3]->str_val);
+    } catch (const std::exception&) {
+        return "-ERR ZREVRANGE start and end must be integers\r\n";
+    }
+
+    std::vector<std::string> range = db.zrevrange(key, start, end);
+
+    std::string response = "*" + std::to_string(range.size()) + "\r\n";
+    for (const auto& member : range) {
+        response += "$" + std::to_string(member.length()) + "\r\n" + member + "\r\n";
+    }
+
+    return response;
 }
 
 std::string CommandProcessor::handle_zscore(const std::vector<std::shared_ptr<RespValue>>& args) {
-    return "-ERR Not implemented yet\r\n";
+    if (args.size() != 3) {
+        return "-ERR ZSCORE requires exactly 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString || args[2]->type != RespType::BulkString) {
+        return "-ERR ZSCORE key and member must be bulk strings\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    std::string member = args[2]->str_val;
+
+    double score = db.zscore(key, member);
+    if (score == 0.0 && (!db.exists(key) || db.zcard(key) == 0)) {
+        // Member doesn't exist
+        return "$-1\r\n";
+    }
+
+
+    std::string score_str = std::to_string(score);
+    size_t dot_pos = score_str.find('.');
+    if (dot_pos != std::string::npos) {
+        size_t last_non_zero = score_str.find_last_not_of('0');
+        if (last_non_zero > dot_pos) {
+            score_str = score_str.substr(0, last_non_zero + 1);
+        } else {
+            score_str = score_str.substr(0, dot_pos);
+        }
+    }
+
+    return "$" + std::to_string(score_str.length()) + "\r\n" + score_str + "\r\n";
 }
 
 std::string CommandProcessor::handle_zrank(const std::vector<std::shared_ptr<RespValue>>& args) {
@@ -590,19 +982,22 @@ std::string CommandProcessor::handle_zrank(const std::vector<std::shared_ptr<Res
         return "-ERR ZRANK requires exactly 2 arguments\r\n";
     }
 
-    if (args[1]->type != RespType::BulkString) {
-        return "-ERR ZRANK key must be a bulk string\r\n";
+    if (args[1]->type != RespType::BulkString || args[2]->type != RespType::BulkString) {
+        return "-ERR ZRANK key and member must be bulk strings\r\n";
     }
 
     std::string key = args[1]->str_val;
     std::string member = args[2]->str_val;
 
     long long rank = db.zrank(key, member);
-    if (rank >= 0) {
-        return ":" + std::to_string(rank) + "\r\n";
+    if (rank < 0) {
+        return "$-1\r\n"; // Member not found
     }
-    return "$-1\r\n"; // Not found
+
+    return ":" + std::to_string(rank) + "\r\n";
 }
+
+
 
 // Transaction commands
 std::string CommandProcessor::handle_multi(const std::vector<std::shared_ptr<RespValue>>& args) {

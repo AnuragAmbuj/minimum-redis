@@ -18,7 +18,14 @@ Developed using Grok Code.
 - **EXEC**: Execute all queued commands atomically
 - **DISCARD**: Cancel the transaction
 - Atomic operations across multiple commands
-- Error isolation within transactions
+
+### Expiration
+- **EXPIRE**: Set expiration time in seconds
+- **PEXPIRE**: Set expiration time in milliseconds
+- **TTL**: Get remaining time to live in seconds
+- **PTTL**: Get remaining time to live in milliseconds
+- **PERSIST**: Remove expiration from a key
+- Automatic cleanup of expired keys
 
 ### Core Features
 - **Redis Serialization Protocol (RESP)**: Complete RESP parsing and serialization implementation
@@ -125,6 +132,17 @@ DISCARD
 # Transaction cancelled, key never set
 ```
 
+#### Expiration Operations
+```bash
+SET temp_key temp_value
+EXPIRE temp_key 300      # Expire in 5 minutes
+TTL temp_key             # Check remaining seconds
+PEXPIRE temp_key 10000   # Expire in 10 seconds (milliseconds)
+PTTL temp_key            # Check remaining milliseconds
+PERSIST temp_key         # Remove expiration
+# Keys automatically expire and are cleaned up on access
+```
+
 #### Persistence Operations
 ```bash
 SAVE  # Manual persistence
@@ -208,7 +226,7 @@ Developed using Grok Code by xAI.
 - [x] **Complete Hashes data structure**: HSET, HGET, HDEL, HLEN, HKEYS, HVALS, HGETALL
 - [x] **Complete Sorted Sets data structure**: ZADD, ZREM, ZCARD, ZRANGE, ZREVRANGE, ZSCORE, ZRANK
 - [ ] WATCH/UNWATCH commands for optimistic concurrency
-- [ ] Key expiration (TTL, EXPIRE, PEXPIRE commands)
+- [x] **Key expiration**: EXPIRE, PEXPIRE, TTL, PTTL, PERSIST commands
 - [ ] Disk-based persistence (RDB/AOF formats)
 - [ ] Publish/Subscribe functionality
 - [ ] Clustering capabilities

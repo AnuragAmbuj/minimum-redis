@@ -209,6 +209,18 @@ std::string CommandProcessor::process_command(const std::shared_ptr<RespValue>& 
         return handle_exec(cmd_args);
     } else if (upper_cmd == "DISCARD") {
         return handle_discard(cmd_args);
+    }
+    // Expiration commands
+    else if (upper_cmd == "EXPIRE") {
+        return handle_expire(cmd_args);
+    } else if (upper_cmd == "PEXPIRE") {
+        return handle_pexpire(cmd_args);
+    } else if (upper_cmd == "TTL") {
+        return handle_ttl(cmd_args);
+    } else if (upper_cmd == "PTTL") {
+        return handle_pttl(cmd_args);
+    } else if (upper_cmd == "PERSIST") {
+        return handle_persist(cmd_args);
     } else {
         return "-ERR Unknown command\r\n";
     }
@@ -1070,4 +1082,94 @@ std::string CommandProcessor::handle_discard(const std::vector<std::shared_ptr<R
 
     in_transaction = false;
     return "+OK\r\n";
+}
+
+// Expiration commands
+std::string CommandProcessor::handle_expire(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 3) {
+        return "-ERR EXPIRE requires exactly 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString || args[2]->type != RespType::BulkString) {
+        return "-ERR EXPIRE arguments must be bulk strings\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    int64_t seconds;
+
+    try {
+        seconds = std::stoll(args[2]->str_val);
+    } catch (const std::exception&) {
+        return "-ERR EXPIRE seconds must be an integer\r\n";
+    }
+
+    bool result = db.expire(key, seconds);
+    return result ? ":1\r\n" : ":0\r\n";
+}
+
+std::string CommandProcessor::handle_pexpire(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 3) {
+        return "-ERR PEXPIRE requires exactly 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString || args[2]->type != RespType::BulkString) {
+        return "-ERR PEXPIRE arguments must be bulk strings\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    int64_t milliseconds;
+
+    try {
+        milliseconds = std::stoll(args[2]->str_val);
+    } catch (const std::exception&) {
+        return "-ERR PEXPIRE milliseconds must be an integer\r\n";
+    }
+
+    bool result = db.pexpire(key, milliseconds);
+    return result ? ":1\r\n" : ":0\r\n";
+}
+
+std::string CommandProcessor::handle_ttl(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 2) {
+        return "-ERR TTL requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR TTL key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    int64_t ttl = db.ttl(key);
+
+    return ":" + std::to_string(ttl) + "\r\n";
+}
+
+std::string CommandProcessor::handle_pttl(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 2) {
+        return "-ERR PTTL requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR PTTL key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    int64_t pttl = db.pttl(key);
+
+    return ":" + std::to_string(pttl) + "\r\n";
+}
+
+std::string CommandProcessor::handle_persist(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 2) {
+        return "-ERR PERSIST requires exactly 1 argument\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR PERSIST key must be a bulk string\r\n";
+    }
+
+    std::string key = args[1]->str_val;
+    bool result = db.persist(key);
+
+    return result ? ":1\r\n" : ":0\r\n";
 }

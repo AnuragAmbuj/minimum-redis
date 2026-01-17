@@ -19,6 +19,10 @@ bool Database::set(const std::string& key, const std::string& value) {
 std::string Database::get(const std::string& key) {
     auto it = data.find(key);
     if (it != data.end() && it->second.type == RedisType::String) {
+        if (it->second.is_expired()) {
+            data.erase(it);
+            return "";
+        }
         return it->second.str_val;
     }
     return ""; // Empty string indicates key not found
@@ -29,15 +33,27 @@ bool Database::del(const std::string& key) {
 }
 
 bool Database::exists(const std::string& key) {
-    return data.find(key) != data.end();
+    auto it = data.find(key);
+    if (it == data.end()) return false;
+
+    if (it->second.is_expired()) {
+        data.erase(it);
+        return false;
+    }
+
+    return true;
 }
 
 RedisType Database::type(const std::string& key) {
     auto it = data.find(key);
     if (it != data.end()) {
+        if (it->second.is_expired()) {
+            data.erase(it);
+            return RedisType::String; // Default type for non-existent
+        }
         return it->second.type;
     }
-    return RedisType::String; // Default
+    return RedisType::String; // Default type
 }
 
 std::vector<std::string> Database::keys() {
@@ -47,6 +63,70 @@ std::vector<std::string> Database::keys() {
         result.push_back(pair.first);
     }
     return result;
+}
+
+// Expiration operations
+bool Database::expire(const std::string& key, int64_t seconds) {
+    auto it = data.find(key);
+    if (it == data.end()) return false;
+
+    if (it->second.is_expired()) {
+        data.erase(it);
+        return false;
+    }
+
+    it->second.set_expiry_seconds(seconds);
+    return true;
+}
+
+bool Database::pexpire(const std::string& key, int64_t milliseconds) {
+    auto it = data.find(key);
+    if (it == data.end()) return false;
+
+    if (it->second.is_expired()) {
+        data.erase(it);
+        return false;
+    }
+
+    it->second.set_expiry_milliseconds(milliseconds);
+    return true;
+}
+
+int64_t Database::ttl(const std::string& key) {
+    auto it = data.find(key);
+    if (it == data.end()) return -2; // Key doesn't exist
+
+    if (it->second.is_expired()) {
+        data.erase(it);
+        return -2; // Key expired and was removed
+    }
+
+    return it->second.ttl_seconds();
+}
+
+int64_t Database::pttl(const std::string& key) {
+    auto it = data.find(key);
+    if (it == data.end()) return -2; // Key doesn't exist
+
+    if (it->second.is_expired()) {
+        data.erase(it);
+        return -2; // Key expired and was removed
+    }
+
+    return it->second.ttl_milliseconds();
+}
+
+bool Database::persist(const std::string& key) {
+    auto it = data.find(key);
+    if (it == data.end()) return false;
+
+    if (it->second.is_expired()) {
+        data.erase(it);
+        return false;
+    }
+
+    it->second.persist();
+    return true;
 }
 
 // List operations
@@ -87,6 +167,10 @@ std::string Database::rpop(const std::string& key) {
 size_t Database::llen(const std::string& key) {
     auto it = data.find(key);
     if (it != data.end() && it->second.type == RedisType::List) {
+        if (it->second.is_expired()) {
+            data.erase(it);
+            return 0;
+        }
         return it->second.list_val.size();
     }
     return 0;

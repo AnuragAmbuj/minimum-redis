@@ -74,6 +74,13 @@ private:
     std::string handle_exec(const std::vector<std::shared_ptr<RespValue>>& args);
     std::string handle_discard(const std::vector<std::shared_ptr<RespValue>>& args);
 
+    // Expiration commands
+    std::string handle_expire(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_pexpire(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_ttl(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_pttl(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_persist(const std::vector<std::shared_ptr<RespValue>>& args);
+
 public:
     CommandProcessor(Database& database) : db(database) {}
 

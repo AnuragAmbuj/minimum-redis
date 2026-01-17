@@ -26,6 +26,13 @@ public:
     std::vector<std::string> keys();
     RedisType type(const std::string& key);
 
+    // Expiration operations
+    bool expire(const std::string& key, int64_t seconds);
+    bool pexpire(const std::string& key, int64_t milliseconds);
+    int64_t ttl(const std::string& key);
+    int64_t pttl(const std::string& key);
+    bool persist(const std::string& key);
+
     // List operations
     size_t lpush(const std::string& key, const std::vector<std::string>& values);
     size_t rpush(const std::string& key, const std::vector<std::string>& values);

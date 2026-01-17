@@ -9,11 +9,25 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <mutex>
 #include "redis_value.h"
+
+class PubSubManager {
+private:
+    std::unordered_map<std::string, std::vector<int>> subscribers;
+    std::mutex mutex;
+
+public:
+    void subscribe(int client_fd, const std::string& channel);
+    void unsubscribe(int client_fd, const std::string& channel);
+    void unsubscribe_all(int client_fd);
+    std::vector<int> get_subscribers(const std::string& channel);
+};
 
 class Database {
 private:
     std::unordered_map<std::string, RedisValue> data;
+    PubSubManager pubsub;
 
 public:
     // String operations
@@ -32,6 +46,10 @@ public:
     int64_t ttl(const std::string& key);
     int64_t pttl(const std::string& key);
     bool persist(const std::string& key);
+
+    // WATCH/UNWATCH support
+    uint64_t get_mod_count(const std::string& key);
+    void increment_mod_count(const std::string& key);
 
     // List operations
     size_t lpush(const std::string& key, const std::vector<std::string>& values);
@@ -72,6 +90,10 @@ public:
 
     bool save_to_file(const std::string& filename);
     bool load_from_file(const std::string& filename);
+    bool save_rdb(const std::string& filename);
+    bool load_rdb(const std::string& filename);
+
+    PubSubManager& get_pubsub() { return pubsub; }
 };
 
 #endif //MINIMALREDIS_DB_H

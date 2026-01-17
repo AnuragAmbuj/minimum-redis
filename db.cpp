@@ -7,6 +7,8 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <cstdint>
+#include <cstring>
 
 // String operations
 bool Database::set(const std::string& key, const std::string& value) {
@@ -127,6 +129,27 @@ bool Database::persist(const std::string& key) {
 
     it->second.persist();
     return true;
+}
+
+// WATCH/UNWATCH support
+uint64_t Database::get_mod_count(const std::string& key) {
+    auto it = data.find(key);
+    if (it != data.end()) {
+        return it->second.mod_count;
+    }
+    return 0; // Key doesn't exist
+}
+
+void Database::increment_mod_count(const std::string& key) {
+    auto it = data.find(key);
+    if (it != data.end()) {
+        it->second.mod_count++;
+    } else {
+        // Create a new entry with mod_count = 1
+        RedisValue val(RedisType::String);
+        val.mod_count = 1;
+        data[key] = val;
+    }
 }
 
 // List operations
@@ -582,4 +605,281 @@ bool Database::load_from_file(const std::string& filename) {
 
     file.close();
     return true;
+}
+
+const uint8_t RDB_OPCODE_SELECTDB = 0xFE;
+const uint8_t RDB_OPCODE_EOF = 0xFF;
+const uint8_t RDB_TYPE_STRING = 0x00;
+const uint8_t RDB_TYPE_LIST = 0x01;
+const uint8_t RDB_TYPE_SET = 0x02;
+const uint8_t RDB_TYPE_ZSET = 0x03;
+const uint8_t RDB_TYPE_HASH = 0x04;
+const uint8_t RDB_OPCODE_EXPIRETIME_MS = 0xFC;
+const char* RDB_MAGIC = "REDIS";
+const uint8_t RDB_VERSION = 9;
+
+void write_length_encoded(std::ofstream& file, const std::string& str) {
+    uint32_t len = str.length();
+    if (len < 64) {
+        uint8_t encoded = len;
+        file.write(reinterpret_cast<char*>(&encoded), 1);
+    } else {
+        uint8_t flag = 0x80;
+        file.write(reinterpret_cast<char*>(&flag), 1);
+        file.write(reinterpret_cast<char*>(&len), 4);
+    }
+    file.write(str.c_str(), len);
+}
+
+bool read_length_encoded(std::ifstream& file, std::string& str) {
+    uint8_t first_byte;
+    if (!file.read(reinterpret_cast<char*>(&first_byte), 1)) return false;
+
+    uint32_t len;
+    if ((first_byte & 0xC0) == 0) {
+        len = first_byte & 0x3F;
+    } else if ((first_byte & 0xC0) == 0x80) {
+        uint32_t len32;
+        if (!file.read(reinterpret_cast<char*>(&len32), 4)) return false;
+        len = len32;
+    } else {
+        return false;
+    }
+
+    str.resize(len);
+    if (!file.read(&str[0], len)) return false;
+    return true;
+}
+
+bool Database::save_rdb(const std::string& filename) {
+    std::ofstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    file.write(RDB_MAGIC, 5);
+    file.write(reinterpret_cast<const char*>(&RDB_VERSION), 1);
+
+    file.write(reinterpret_cast<const char*>(&RDB_OPCODE_SELECTDB), 1);
+    uint8_t db_num = 0;
+    file.write(reinterpret_cast<char*>(&db_num), 1);
+
+    for (const auto& pair : data) {
+        const std::string& key = pair.first;
+        const RedisValue& value = pair.second;
+
+        if (value.expiry_time > 0) {
+            file.write(reinterpret_cast<const char*>(&RDB_OPCODE_EXPIRETIME_MS), 1);
+            uint64_t expiry_timestamp = value.expiry_time;
+            file.write(reinterpret_cast<char*>(&expiry_timestamp), 8);
+        }
+
+        switch (value.type) {
+            case RedisType::String: {
+                file.write(reinterpret_cast<const char*>(&RDB_TYPE_STRING), 1);
+                write_length_encoded(file, key);
+                write_length_encoded(file, value.str_val);
+                break;
+            }
+            case RedisType::List: {
+                file.write(reinterpret_cast<const char*>(&RDB_TYPE_LIST), 1);
+                write_length_encoded(file, key);
+                uint32_t list_size = value.list_val.size();
+                file.write(reinterpret_cast<char*>(&list_size), 4);
+                for (const auto& item : value.list_val) {
+                    write_length_encoded(file, item);
+                }
+                break;
+            }
+            case RedisType::Set: {
+                file.write(reinterpret_cast<const char*>(&RDB_TYPE_SET), 1);
+                write_length_encoded(file, key);
+                uint32_t set_size = value.set_val.size();
+                file.write(reinterpret_cast<char*>(&set_size), 4);
+                for (const auto& item : value.set_val) {
+                    write_length_encoded(file, item);
+                }
+                break;
+            }
+            case RedisType::ZSet: {
+                file.write(reinterpret_cast<const char*>(&RDB_TYPE_ZSET), 1);
+                write_length_encoded(file, key);
+                uint32_t zset_size = value.zset_member_to_score.size();
+                file.write(reinterpret_cast<char*>(&zset_size), 4);
+                for (const auto& pair : value.zset_score_to_member) {
+                    write_length_encoded(file, pair.second);
+                    double score = pair.first;
+                    file.write(reinterpret_cast<char*>(&score), 8);
+                }
+                break;
+            }
+            case RedisType::Hash: {
+                file.write(reinterpret_cast<const char*>(&RDB_TYPE_HASH), 1);
+                write_length_encoded(file, key);
+                uint32_t hash_size = value.hash_val.size();
+                file.write(reinterpret_cast<char*>(&hash_size), 4);
+                for (const auto& kv : value.hash_val) {
+                    write_length_encoded(file, kv.first);
+                    write_length_encoded(file, kv.second);
+                }
+                break;
+            }
+        }
+    }
+
+    file.write(reinterpret_cast<const char*>(&RDB_OPCODE_EOF), 1);
+
+    file.close();
+    return true;
+}
+
+bool Database::load_rdb(const std::string& filename) {
+    std::ifstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        return false;
+    }
+
+    char magic[5];
+    if (!file.read(magic, 5) || strncmp(magic, RDB_MAGIC, 5) != 0) {
+        return false;
+    }
+
+    uint8_t version;
+    if (!file.read(reinterpret_cast<char*>(&version), 1)) {
+        return false;
+    }
+
+    uint8_t opcode;
+    while (file.read(reinterpret_cast<char*>(&opcode), 1)) {
+        if (opcode == RDB_OPCODE_EOF) {
+            break;
+        }
+
+        int64_t expiry_ms = -1;
+
+        if (opcode == RDB_OPCODE_EXPIRETIME_MS) {
+            uint64_t timestamp;
+            if (!file.read(reinterpret_cast<char*>(&timestamp), 8)) return false;
+            expiry_ms = timestamp;
+            if (!file.read(reinterpret_cast<char*>(&opcode), 1)) return false;
+        }
+
+        uint8_t type = opcode;
+
+        std::string key;
+        if (!read_length_encoded(file, key)) return false;
+        switch (type) {
+            case RDB_TYPE_STRING: {
+                std::string value;
+                if (!read_length_encoded(file, value)) return false;
+                set(key, value);
+                if (expiry_ms > 0) {
+                    auto it = data.find(key);
+                    if (it != data.end()) {
+                        it->second.expiry_time = expiry_ms;
+                    }
+                }
+                break;
+            }
+            case RDB_TYPE_LIST: {
+                uint32_t size;
+                if (!file.read(reinterpret_cast<char*>(&size), 4)) return false;
+                std::vector<std::string> values;
+                for (uint32_t i = 0; i < size; ++i) {
+                    std::string item;
+                    if (!read_length_encoded(file, item)) return false;
+                    values.push_back(item);
+                }
+                for (const auto& val : values) {
+                    rpush(key, {val});
+                }
+                break;
+            }
+            case RDB_TYPE_SET: {
+                uint32_t size;
+                if (!file.read(reinterpret_cast<char*>(&size), 4)) return false;
+                std::vector<std::string> members;
+                for (uint32_t i = 0; i < size; ++i) {
+                    std::string member;
+                    if (!read_length_encoded(file, member)) return false;
+                    members.push_back(member);
+                }
+                sadd(key, members);
+                break;
+            }
+            case RDB_TYPE_ZSET: {
+                uint32_t size;
+                if (!file.read(reinterpret_cast<char*>(&size), 4)) return false;
+                std::vector<std::pair<double, std::string>> members;
+                for (uint32_t i = 0; i < size; ++i) {
+                    std::string member;
+                    if (!read_length_encoded(file, member)) return false;
+                    double score;
+                    if (!file.read(reinterpret_cast<char*>(&score), 8)) return false;
+                    members.emplace_back(score, member);
+                }
+                zadd(key, members);
+                break;
+            }
+            case RDB_TYPE_HASH: {
+                uint32_t size;
+                if (!file.read(reinterpret_cast<char*>(&size), 4)) return false;
+                for (uint32_t i = 0; i < size; ++i) {
+                    std::string field, value;
+                    if (!read_length_encoded(file, field) || !read_length_encoded(file, value)) return false;
+                    hset(key, field, value);
+                }
+                break;
+            }
+            case RDB_OPCODE_SELECTDB: {
+                uint8_t db_num;
+                if (!file.read(reinterpret_cast<char*>(&db_num), 1)) return false;
+                if (db_num != 0) return false;
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    file.close();
+    return true;
+}
+
+void PubSubManager::subscribe(int client_fd, const std::string& channel) {
+    std::lock_guard<std::mutex> lock(mutex);
+    subscribers[channel].push_back(client_fd);
+}
+
+void PubSubManager::unsubscribe(int client_fd, const std::string& channel) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto& subs = subscribers[channel];
+    subs.erase(std::remove(subs.begin(), subs.end(), client_fd), subs.end());
+    if (subs.empty()) {
+        subscribers.erase(channel);
+    }
+}
+
+void PubSubManager::unsubscribe_all(int client_fd) {
+    std::lock_guard<std::mutex> lock(mutex);
+    for (auto& pair : subscribers) {
+        auto& subs = pair.second;
+        subs.erase(std::remove(subs.begin(), subs.end(), client_fd), subs.end());
+    }
+    for (auto it = subscribers.begin(); it != subscribers.end(); ) {
+        if (it->second.empty()) {
+            it = subscribers.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+std::vector<int> PubSubManager::get_subscribers(const std::string& channel) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto it = subscribers.find(channel);
+    if (it != subscribers.end()) {
+        return it->second;
+    }
+    return {};
 }

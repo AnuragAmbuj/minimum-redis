@@ -28,6 +28,9 @@ public:
     // Expiration timestamp (milliseconds since epoch, 0 means no expiration)
     int64_t expiry_time = 0;
 
+    // Modification counter for optimistic concurrency (WATCH/UNWATCH)
+    uint64_t mod_count = 0;
+
     // Storage for different types
     std::string str_val;
     std::vector<std::string> list_val;

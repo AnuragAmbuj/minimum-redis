@@ -7,9 +7,14 @@
 
 #include "resp.h"
 #include "db.h"
+#include "lua_scripting.h"
 #include <string>
 #include <queue>
 #include <functional>
+#include <unordered_map>
+#include <memory>
+
+extern std::unordered_map<int, class CommandProcessor*> client_processors;
 
 // Transaction command representation
 struct TransactionCommand {
@@ -23,6 +28,16 @@ private:
     Database& db;
     std::queue<TransactionCommand> transaction_queue;
     bool in_transaction = false;
+
+    // WATCH/UNWATCH state
+    std::unordered_map<std::string, uint64_t> watched_keys;
+
+    int client_fd = -1;
+    int notify_write_fd = -1;
+    std::queue<std::string> pubsub_messages;
+
+    std::unique_ptr<LuaScriptingEngine> lua_engine;
+    std::unordered_map<int, CommandProcessor*>* client_processors_ptr = nullptr;
 
     std::string handle_set(const std::vector<std::shared_ptr<RespValue>>& args);
     std::string handle_get(const std::vector<std::shared_ptr<RespValue>>& args);
@@ -81,10 +96,28 @@ private:
     std::string handle_pttl(const std::vector<std::shared_ptr<RespValue>>& args);
     std::string handle_persist(const std::vector<std::shared_ptr<RespValue>>& args);
 
+    // WATCH/UNWATCH commands
+    std::string handle_watch(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_unwatch(const std::vector<std::shared_ptr<RespValue>>& args);
+
+    std::string handle_subscribe(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_publish(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_unsubscribe(const std::vector<std::shared_ptr<RespValue>>& args);
+
+    std::string handle_eval(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_evalsha(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_script(const std::vector<std::shared_ptr<RespValue>>& args);
+
 public:
-    CommandProcessor(Database& database) : db(database) {}
+    CommandProcessor(Database& database, int fd, int notify_fd, std::unordered_map<int, CommandProcessor*>* processors = nullptr) : db(database), client_fd(fd), notify_write_fd(notify_fd), client_processors_ptr(processors) {
+        lua_engine = std::make_unique<LuaScriptingEngine>(db);
+    }
 
     std::string process_command(const std::shared_ptr<RespValue>& command);
+
+    void queue_pubsub_message(const std::string& message);
+    std::string get_next_pubsub_message();
+    bool has_pubsub_messages() const;
 };
 
 #endif //MINIMALREDIS_COMMANDS_H

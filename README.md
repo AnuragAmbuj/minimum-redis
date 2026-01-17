@@ -31,7 +31,9 @@ Developed using Grok Code.
 - **Redis Serialization Protocol (RESP)**: Complete RESP parsing and serialization implementation
 - **Concurrent Connections**: Thread-per-client architecture supporting high concurrency
 - **Transaction Support**: MULTI/EXEC/DISCARD commands for atomic operations
-- **Persistence**: Automatic save/load functionality with configurable intervals (default: 30 seconds)
+- **Publish/Subscribe**: SUBSCRIBE, PUBLISH, UNSUBSCRIBE commands for real-time messaging
+- **Persistence**: RDB format disk persistence with automatic save/load and expiry support
+- **Lua Scripting**: EVAL, EVALSHA, SCRIPT commands with Redis API bindings and script caching
 - **Type System**: TYPE command for key data type inspection
 - **Error Handling**: Redis-compatible error response format
 
@@ -150,6 +152,28 @@ SAVE  # Manual persistence
 # Data is loaded from minimalredis.db on server startup
 ```
 
+#### Publish/Subscribe Operations
+```bash
+SUBSCRIBE news sports  # Subscribe to channels (blocks for messages)
+PUBLISH news "Breaking news!"  # Publish message to channel (returns subscriber count)
+UNSUBSCRIBE news      # Unsubscribe from channel
+```
+
+In another terminal:
+```bash
+redis-cli -p 6379 PUBLISH news "Test message"
+# Subscriber will receive: *3\r\n$7\r\nmessage\r\n$4\r\nnews\r\n$12\r\nTest message\r\n
+```
+
+#### Lua Scripting Operations
+```bash
+SCRIPT LOAD "return redis.call('GET', KEYS[1])"  # Load script and get SHA1
+EVAL "return redis.call('SET', KEYS[1], ARGV[1])" 1 mykey myvalue  # Execute script directly
+EVALSHA <sha1> 1 mykey  # Execute cached script by SHA1
+SCRIPT EXISTS <sha1>    # Check if script exists in cache
+SCRIPT FLUSH            # Clear script cache
+```
+
 ## Configuration
 
 - **Port**: Fixed to 6379 (Redis protocol standard)
@@ -163,7 +187,6 @@ SAVE  # Manual persistence
 - **Database Concurrency**: Basic mutex-free design (thread-safe for current implementation)
 - **Incomplete Data Types**: Sets, Hashes, and Sorted Sets contain stub implementations
 - **Single Node**: No clustering or distributed capabilities
-- **Publish/Subscribe**: Not implemented
 
 ## Performance Characteristics
 
@@ -225,13 +248,12 @@ Developed using Grok Code by xAI.
 - [x] **Complete Sets data structure**: SADD, SREM, SISMEMBER, SCARD, SMEMBERS, SINTER, SUNION, SDIFF
 - [x] **Complete Hashes data structure**: HSET, HGET, HDEL, HLEN, HKEYS, HVALS, HGETALL
 - [x] **Complete Sorted Sets data structure**: ZADD, ZREM, ZCARD, ZRANGE, ZREVRANGE, ZSCORE, ZRANK
-- [ ] WATCH/UNWATCH commands for optimistic concurrency
+- [x] **Optimistic Concurrency**: WATCH/UNWATCH commands implemented
 - [x] **Key expiration**: EXPIRE, PEXPIRE, TTL, PTTL, PERSIST commands
-- [ ] Disk-based persistence (RDB/AOF formats)
-- [ ] Publish/Subscribe functionality
+- [x] **Disk-based persistence**: RDB format save/load with expiry support
 - [ ] Clustering capabilities
-- [ ] Lua scripting engine
-- [x] **Comprehensive test suite**: 90 tests with 100% pass rate
+- [x] **Lua scripting**: EVAL, EVALSHA, SCRIPT commands for server-side scripting
+- [x] **Comprehensive test suite**: 97 tests with 100% pass rate
 
 ---
 

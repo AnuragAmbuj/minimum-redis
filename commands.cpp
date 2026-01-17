@@ -4,6 +4,11 @@
 
 #include "commands.h"
 #include <algorithm>
+#include <unistd.h>
+
+
+
+
 
 std::string CommandProcessor::process_command(const std::shared_ptr<RespValue>& command) {
     if (command->type != RespType::Array || command->array_val.empty()) {
@@ -221,6 +226,26 @@ std::string CommandProcessor::process_command(const std::shared_ptr<RespValue>& 
         return handle_pttl(cmd_args);
     } else if (upper_cmd == "PERSIST") {
         return handle_persist(cmd_args);
+    }
+    // WATCH/UNWATCH commands
+    else if (upper_cmd == "WATCH") {
+        return handle_watch(cmd_args);
+    } else if (upper_cmd == "UNWATCH") {
+        return handle_unwatch(cmd_args);
+    }
+    else if (upper_cmd == "SUBSCRIBE") {
+        return handle_subscribe(cmd_args);
+    } else if (upper_cmd == "PUBLISH") {
+        return handle_publish(cmd_args);
+    } else if (upper_cmd == "UNSUBSCRIBE") {
+        return handle_unsubscribe(cmd_args);
+    }
+    else if (upper_cmd == "EVAL") {
+        return handle_eval(cmd_args);
+    } else if (upper_cmd == "EVALSHA") {
+        return handle_evalsha(cmd_args);
+    } else if (upper_cmd == "SCRIPT") {
+        return handle_script(cmd_args);
     } else {
         return "-ERR Unknown command\r\n";
     }
@@ -238,11 +263,9 @@ std::string CommandProcessor::handle_set(const std::vector<std::shared_ptr<RespV
     std::string key = args[1]->str_val;
     std::string value = args[2]->str_val;
 
-    if (db.set(key, value)) {
-        return "+OK\r\n";
-    } else {
-        return "-ERR Failed to set value\r\n";
-    }
+    bool result = db.set(key, value);
+    db.increment_mod_count(key);  // Increment modification counter
+    return "+OK\r\n";
 }
 
 std::string CommandProcessor::handle_get(const std::vector<std::shared_ptr<RespValue>>& args) {
@@ -275,8 +298,13 @@ std::string CommandProcessor::handle_del(const std::vector<std::shared_ptr<RespV
     }
 
     std::string key = args[1]->str_val;
-    int deleted = db.del(key) ? 1 : 0;
 
+    // For WATCH/UNWATCH, increment mod count before deletion
+    if (db.exists(key)) {
+        db.increment_mod_count(key);
+    }
+
+    int deleted = db.del(key) ? 1 : 0;
     return ":" + std::to_string(deleted) + "\r\n";
 }
 
@@ -373,6 +401,7 @@ std::string CommandProcessor::handle_lpush(const std::vector<std::shared_ptr<Res
     }
 
     size_t new_length = db.lpush(key, values);
+    db.increment_mod_count(key);  // Increment modification counter
     return ":" + std::to_string(new_length) + "\r\n";
 }
 
@@ -396,6 +425,7 @@ std::string CommandProcessor::handle_rpush(const std::vector<std::shared_ptr<Res
     }
 
     size_t new_length = db.rpush(key, values);
+    db.increment_mod_count(key);  // Increment modification counter
     return ":" + std::to_string(new_length) + "\r\n";
 }
 
@@ -415,6 +445,7 @@ std::string CommandProcessor::handle_lpop(const std::vector<std::shared_ptr<Resp
         return "$-1\r\n"; // Null bulk string
     }
 
+    db.increment_mod_count(key);  // Increment modification counter
     return "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
 }
 
@@ -434,6 +465,7 @@ std::string CommandProcessor::handle_rpop(const std::vector<std::shared_ptr<Resp
         return "$-1\r\n"; // Null bulk string
     }
 
+    db.increment_mod_count(key);  // Increment modification counter
     return "$" + std::to_string(value.length()) + "\r\n" + value + "\r\n";
 }
 
@@ -531,6 +563,9 @@ std::string CommandProcessor::handle_sadd(const std::vector<std::shared_ptr<Resp
     }
 
     size_t added_count = db.sadd(key, members);
+    if (added_count > 0) {
+        db.increment_mod_count(key);  // Increment modification counter
+    }
     return ":" + std::to_string(added_count) + "\r\n";
 }
 
@@ -554,6 +589,9 @@ std::string CommandProcessor::handle_srem(const std::vector<std::shared_ptr<Resp
     }
 
     size_t removed_count = db.srem(key, members);
+    if (removed_count > 0) {
+        db.increment_mod_count(key);  // Increment modification counter
+    }
     return ":" + std::to_string(removed_count) + "\r\n";
 }
 
@@ -703,6 +741,10 @@ std::string CommandProcessor::handle_hset(const std::vector<std::shared_ptr<Resp
         }
     }
 
+    if (fields_set > 0) {
+        db.increment_mod_count(key);  // Increment modification counter
+    }
+
     return ":" + std::to_string(fields_set) + "\r\n";
 }
 
@@ -750,6 +792,9 @@ std::string CommandProcessor::handle_hdel(const std::vector<std::shared_ptr<Resp
     }
 
     size_t fields_deleted = db.hdel(key, fields);
+    if (fields_deleted > 0) {
+        db.increment_mod_count(key);  // Increment modification counter
+    }
     return ":" + std::to_string(fields_deleted) + "\r\n";
 }
 
@@ -858,6 +903,9 @@ std::string CommandProcessor::handle_zadd(const std::vector<std::shared_ptr<Resp
     }
 
     size_t members_added = db.zadd(key, members);
+    if (members_added > 0) {
+        db.increment_mod_count(key);  // Increment modification counter
+    }
     return ":" + std::to_string(members_added) + "\r\n";
 }
 
@@ -881,6 +929,9 @@ std::string CommandProcessor::handle_zrem(const std::vector<std::shared_ptr<Resp
     }
 
     size_t members_removed = db.zrem(key, members);
+    if (members_removed > 0) {
+        db.increment_mod_count(key);  // Increment modification counter
+    }
     return ":" + std::to_string(members_removed) + "\r\n";
 }
 
@@ -1039,6 +1090,20 @@ std::string CommandProcessor::handle_exec(const std::vector<std::shared_ptr<Resp
         return "-ERR EXEC without MULTI\r\n";
     }
 
+    // Check if any watched keys have been modified
+    for (const auto& watch_pair : watched_keys) {
+        const std::string& key = watch_pair.first;
+        uint64_t watched_mod_count = watch_pair.second;
+
+        if (db.get_mod_count(key) != watched_mod_count) {
+            // A watched key has been modified - abort transaction
+            transaction_queue = std::queue<TransactionCommand>(); // Clear queue
+            in_transaction = false;
+            watched_keys.clear(); // Clear watches
+            return "-EXECABORT Transaction discarded because of watched key modification\r\n";
+        }
+    }
+
     // Execute all queued commands atomically
     std::vector<std::string> results;
     results.reserve(transaction_queue.size());
@@ -1056,6 +1121,9 @@ std::string CommandProcessor::handle_exec(const std::vector<std::shared_ptr<Resp
     }
 
     in_transaction = false;
+
+    // Clear watches after successful transaction
+    watched_keys.clear();
 
     // Format response as array of results
     std::string response = "*" + std::to_string(results.size()) + "\r\n";
@@ -1104,6 +1172,9 @@ std::string CommandProcessor::handle_expire(const std::vector<std::shared_ptr<Re
     }
 
     bool result = db.expire(key, seconds);
+    if (result) {
+        db.increment_mod_count(key);  // Increment modification counter
+    }
     return result ? ":1\r\n" : ":0\r\n";
 }
 
@@ -1126,6 +1197,9 @@ std::string CommandProcessor::handle_pexpire(const std::vector<std::shared_ptr<R
     }
 
     bool result = db.pexpire(key, milliseconds);
+    if (result) {
+        db.increment_mod_count(key);  // Increment modification counter
+    }
     return result ? ":1\r\n" : ":0\r\n";
 }
 
@@ -1171,5 +1245,254 @@ std::string CommandProcessor::handle_persist(const std::vector<std::shared_ptr<R
     std::string key = args[1]->str_val;
     bool result = db.persist(key);
 
+    if (result) {
+        db.increment_mod_count(key);  // Increment modification counter
+    }
+
     return result ? ":1\r\n" : ":0\r\n";
+}
+
+// WATCH/UNWATCH commands
+std::string CommandProcessor::handle_watch(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() < 2) {
+        return "-ERR WATCH requires at least 1 argument\r\n";
+    }
+
+    if (in_transaction) {
+        return "-ERR WATCH cannot be used inside MULTI\r\n";
+    }
+
+    for (size_t i = 1; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR WATCH keys must be bulk strings\r\n";
+        }
+
+        std::string key = args[i]->str_val;
+        // Record the current modification count for this key
+        watched_keys[key] = db.get_mod_count(key);
+    }
+
+    return "+OK\r\n";
+}
+
+std::string CommandProcessor::handle_unwatch(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 1) {
+        return "-ERR UNWATCH requires no arguments\r\n";
+    }
+
+    // Clear all watched keys
+    watched_keys.clear();
+
+    return "+OK\r\n";
+}
+
+std::string CommandProcessor::handle_subscribe(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() < 2) {
+        return "-ERR SUBSCRIBE requires at least 1 channel\r\n";
+    }
+
+    std::string response;
+    for (size_t i = 1; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR SUBSCRIBE channels must be bulk strings\r\n";
+        }
+
+        std::string channel = args[i]->str_val;
+        db.get_pubsub().subscribe(client_fd, channel);
+
+        std::string channel_len = std::to_string(channel.length());
+        response += "*3\r\n$9\r\nsubscribe\r\n$" + channel_len + "\r\n" + channel + "\r\n:1\r\n";
+    }
+
+    return response;
+}
+
+std::string CommandProcessor::handle_publish(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() != 3) {
+        return "-ERR PUBLISH requires exactly 2 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString || args[2]->type != RespType::BulkString) {
+        return "-ERR PUBLISH arguments must be bulk strings\r\n";
+    }
+
+    std::string channel = args[1]->str_val;
+    std::string message = args[2]->str_val;
+
+    auto subscribers = db.get_pubsub().get_subscribers(channel);
+    size_t num_receivers = subscribers.size();
+
+    std::string channel_len = std::to_string(channel.length());
+    std::string message_len = std::to_string(message.length());
+    std::string pubsub_msg = "*3\r\n$7\r\nmessage\r\n$" + channel_len + "\r\n" + channel + "\r\n$" + message_len + "\r\n" + message + "\r\n";
+
+    if (client_processors_ptr) {
+        for (int sub_fd : subscribers) {
+            auto it = client_processors_ptr->find(sub_fd);
+            if (it != client_processors_ptr->end()) {
+                it->second->queue_pubsub_message(pubsub_msg);
+            }
+        }
+    }
+
+    return ":" + std::to_string(num_receivers) + "\r\n";
+}
+
+std::string CommandProcessor::handle_unsubscribe(const std::vector<std::shared_ptr<RespValue>>& args) {
+    std::vector<std::string> channels_to_unsub;
+
+    if (args.size() == 1) {
+        return "-ERR UNSUBSCRIBE from all channels not implemented\r\n";
+    }
+
+    std::string response;
+    for (size_t i = 1; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR UNSUBSCRIBE channels must be bulk strings\r\n";
+        }
+
+        std::string channel = args[i]->str_val;
+        db.get_pubsub().unsubscribe(client_fd, channel);
+
+        std::string channel_len = std::to_string(channel.length());
+        response += "*3\r\n$11\r\nunsubscribe\r\n$" + channel_len + "\r\n" + channel + "\r\n:0\r\n";
+    }
+
+    return response;
+}
+
+void CommandProcessor::queue_pubsub_message(const std::string& message) {
+    pubsub_messages.push(message);
+    if (notify_write_fd != -1) {
+        char dummy = '1';
+        write(notify_write_fd, &dummy, 1);
+    }
+}
+
+std::string CommandProcessor::get_next_pubsub_message() {
+    if (pubsub_messages.empty()) {
+        return "";
+    }
+    std::string msg = pubsub_messages.front();
+    pubsub_messages.pop();
+    return msg;
+}
+
+bool CommandProcessor::has_pubsub_messages() const {
+    return !pubsub_messages.empty();
+}
+
+std::string CommandProcessor::handle_eval(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() < 3) {
+        return "-ERR EVAL requires at least 3 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString || args[2]->type != RespType::BulkString) {
+        return "-ERR EVAL script and numkeys must be bulk strings\r\n";
+    }
+
+    std::string script = args[1]->str_val;
+    int num_keys;
+    try {
+        num_keys = std::stoi(args[2]->str_val);
+    } catch (...) {
+        return "-ERR EVAL numkeys must be an integer\r\n";
+    }
+
+    if (args.size() < 3 + num_keys) {
+        return "-ERR EVAL insufficient arguments for numkeys\r\n";
+    }
+
+    std::vector<std::string> keys;
+    std::vector<std::string> script_args;
+
+    for (int i = 0; i < num_keys; ++i) {
+        if (args[3 + i]->type != RespType::BulkString) {
+            return "-ERR EVAL keys must be bulk strings\r\n";
+        }
+        keys.push_back(args[3 + i]->str_val);
+    }
+
+    for (size_t i = 3 + num_keys; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR EVAL arguments must be bulk strings\r\n";
+        }
+        script_args.push_back(args[i]->str_val);
+    }
+
+    return lua_engine->eval(script, keys, script_args);
+}
+
+std::string CommandProcessor::handle_evalsha(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() < 3) {
+        return "-ERR EVALSHA requires at least 3 arguments\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString || args[2]->type != RespType::BulkString) {
+        return "-ERR EVALSHA sha1 and numkeys must be bulk strings\r\n";
+    }
+
+    std::string sha1 = args[1]->str_val;
+    int num_keys;
+    try {
+        num_keys = std::stoi(args[2]->str_val);
+    } catch (...) {
+        return "-ERR EVALSHA numkeys must be an integer\r\n";
+    }
+
+    if (args.size() < 3 + num_keys) {
+        return "-ERR EVALSHA insufficient arguments for numkeys\r\n";
+    }
+
+    std::vector<std::string> keys;
+    std::vector<std::string> script_args;
+
+    for (int i = 0; i < num_keys; ++i) {
+        if (args[3 + i]->type != RespType::BulkString) {
+            return "-ERR EVALSHA keys must be bulk strings\r\n";
+        }
+        keys.push_back(args[3 + i]->str_val);
+    }
+
+    for (size_t i = 3 + num_keys; i < args.size(); ++i) {
+        if (args[i]->type != RespType::BulkString) {
+            return "-ERR EVALSHA arguments must be bulk strings\r\n";
+        }
+        script_args.push_back(args[i]->str_val);
+    }
+
+    return lua_engine->evalsha(sha1, keys, script_args);
+}
+
+std::string CommandProcessor::handle_script(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() < 2) {
+        return "-ERR SCRIPT requires at least 1 subcommand\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR SCRIPT subcommand must be a bulk string\r\n";
+    }
+
+    std::string subcmd = args[1]->str_val;
+
+    if (subcmd == "LOAD") {
+        if (args.size() != 3 || args[2]->type != RespType::BulkString) {
+            return "-ERR SCRIPT LOAD requires exactly 1 argument\r\n";
+        }
+        return lua_engine->script_load(args[2]->str_val);
+    } else if (subcmd == "EXISTS") {
+        std::string response;
+        for (size_t i = 2; i < args.size(); ++i) {
+            if (args[i]->type != RespType::BulkString) {
+                return "-ERR SCRIPT EXISTS arguments must be bulk strings\r\n";
+            }
+            response += lua_engine->script_exists(args[i]->str_val) ? ":1\r\n" : ":0\r\n";
+        }
+        return "*" + std::to_string(args.size() - 2) + "\r\n" + response;
+    } else if (subcmd == "FLUSH") {
+        lua_engine->script_flush();
+        return "+OK\r\n";
+    }
+
+    return "-ERR Unknown SCRIPT subcommand\r\n";
 }

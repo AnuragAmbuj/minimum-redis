@@ -9,7 +9,7 @@
 class CommandTest : public ::testing::Test {
 protected:
     Database db;
-    CommandProcessor processor{db};
+    CommandProcessor processor{db, -1, -1};
 
     void SetUp() override {
         // Setup fresh database for each test
@@ -286,4 +286,52 @@ TEST_F(CommandTest, SpecialCharacters) {
     std::string response = processor.process_command(get_cmd);
     std::string expected = "$" + std::to_string(special_value.length()) + "\r\n" + special_value + "\r\n";
     EXPECT_EQ(response, expected);
+}
+
+TEST_F(CommandTest, SUBSCRIBE_Basic) {
+    auto subscribe_cmd = createCommandArray({"SUBSCRIBE", "channel1"});
+    std::string response = processor.process_command(subscribe_cmd);
+    std::string expected = "*3\r\n$9\r\nsubscribe\r\n$8\r\nchannel1\r\n:1\r\n";
+    EXPECT_EQ(response, expected);
+}
+
+TEST_F(CommandTest, SUBSCRIBE_MultipleChannels) {
+    auto subscribe_cmd = createCommandArray({"SUBSCRIBE", "chan1", "chan2"});
+    std::string response = processor.process_command(subscribe_cmd);
+    std::string expected = "*3\r\n$9\r\nsubscribe\r\n$5\r\nchan1\r\n:1\r\n*3\r\n$9\r\nsubscribe\r\n$5\r\nchan2\r\n:1\r\n";
+    EXPECT_EQ(response, expected);
+}
+
+TEST_F(CommandTest, SUBSCRIBE_InvalidArgs) {
+    auto subscribe_cmd = createCommandArray({"SUBSCRIBE"});
+    std::string response = processor.process_command(subscribe_cmd);
+    EXPECT_EQ(response, "-ERR SUBSCRIBE requires at least 1 channel\r\n");
+}
+
+TEST_F(CommandTest, PUBLISH_Basic) {
+    auto publish_cmd = createCommandArray({"PUBLISH", "channel1", "message"});
+    std::string response = processor.process_command(publish_cmd);
+    EXPECT_EQ(response, ":0\r\n");
+}
+
+TEST_F(CommandTest, PUBLISH_InvalidArgs) {
+    auto publish_cmd = createCommandArray({"PUBLISH", "channel1"});
+    std::string response = processor.process_command(publish_cmd);
+    EXPECT_EQ(response, "-ERR PUBLISH requires exactly 2 arguments\r\n");
+}
+
+TEST_F(CommandTest, UNSUBSCRIBE_Basic) {
+    auto subscribe_cmd = createCommandArray({"SUBSCRIBE", "channel1"});
+    processor.process_command(subscribe_cmd);
+
+    auto unsubscribe_cmd = createCommandArray({"UNSUBSCRIBE", "channel1"});
+    std::string response = processor.process_command(unsubscribe_cmd);
+    std::string expected = "*3\r\n$11\r\nunsubscribe\r\n$8\r\nchannel1\r\n:0\r\n";
+    EXPECT_EQ(response, expected);
+}
+
+TEST_F(CommandTest, UNSUBSCRIBE_AllNotImplemented) {
+    auto unsubscribe_cmd = createCommandArray({"UNSUBSCRIBE"});
+    std::string response = processor.process_command(unsubscribe_cmd);
+    EXPECT_EQ(response, "-ERR UNSUBSCRIBE from all channels not implemented\r\n");
 }

@@ -7,17 +7,19 @@
 #include <unistd.h>
 #include <cerrno>
 #include <cstring>
+#include <sys/select.h>
+#include <unordered_map>
 #include "db.h"
 #include "commands.h"
 #include "resp.h"
 
 Database db;
-CommandProcessor processor(db);
+std::unordered_map<int, CommandProcessor*> client_processors;
 
 void handle_client(int client_fd);
 void periodic_save();
 
-const std::string DB_FILE = "minimalredis.db";
+const std::string DB_FILE = "minimalredis.rdb";
 
 void die(const char *msg) {
     int err = errno;
@@ -26,83 +28,124 @@ void die(const char *msg) {
 }
 
 void handle_client(int client_fd) {
+    int pipe_fds[2];
+    if (pipe(pipe_fds) == -1) {
+        return;
+    }
+    int notify_read_fd = pipe_fds[0];
+    int notify_write_fd = pipe_fds[1];
+
+    CommandProcessor processor(db, client_fd, notify_write_fd, &client_processors);
+    client_processors[client_fd] = &processor;
+
     const size_t BUFFER_SIZE = 8192;  // 8KB buffer for better performance
     std::unique_ptr<char[]> buf(new char[BUFFER_SIZE]);
     size_t buf_pos = 0;
 
+    fd_set read_fds;
+    int max_fd = std::max(client_fd, notify_read_fd) + 1;
+
     while (true) {
-        ssize_t n = read(client_fd, buf.get() + buf_pos, BUFFER_SIZE - buf_pos - 1);
-        if (n <= 0) {
-            break;  // Connection closed or error
+        FD_ZERO(&read_fds);
+        FD_SET(client_fd, &read_fds);
+        FD_SET(notify_read_fd, &read_fds);
+
+        int ready = select(max_fd, &read_fds, nullptr, nullptr, nullptr);
+        if (ready < 0) {
+            break;
         }
-        buf_pos += n;
-        buf[buf_pos] = '\0';
 
-        // Process all complete commands in the buffer
-        size_t processed_pos = 0;
-        while (processed_pos < buf_pos) {
-            try {
-                RespParser parser(buf.get() + processed_pos, buf_pos - processed_pos);
-                auto command = parser.parse();
+        if (FD_ISSET(notify_read_fd, &read_fds)) {
+            char dummy;
+            read(notify_read_fd, &dummy, 1);
 
-                std::string response = processor.process_command(command);
-                ssize_t written = write(client_fd, response.c_str(), response.length());
+            while (processor.has_pubsub_messages()) {
+                std::string msg = processor.get_next_pubsub_message();
+                ssize_t written = write(client_fd, msg.c_str(), msg.length());
                 if (written < 0) {
-                    return;  // Write error, close connection
-                }
-
-                // Move past the processed command
-                size_t consumed = parser.get_consumed_bytes();
-                processed_pos += consumed;
-
-            } catch (const std::runtime_error& e) {
-                const std::string& err_msg = e.what();
-                if (err_msg == "Incomplete command") {
-                    // Not enough data for a complete command, wait for more
-                    break;
-                } else {
-                    std::string error = "-ERR " + err_msg + "\r\n";
-                    write(client_fd, error.c_str(), error.length());
-                    return;  // Close connection on parse error
+                    goto cleanup;
                 }
             }
         }
+        if (FD_ISSET(client_fd, &read_fds)) {
+            ssize_t n = read(client_fd, buf.get() + buf_pos, BUFFER_SIZE - buf_pos - 1);
+            if (n <= 0) {
+                break;  // Connection closed or error
+            }
+            buf_pos += n;
+            buf[buf_pos] = '\0';
 
-        // Move remaining unprocessed data to the beginning of buffer
-        if (processed_pos > 0 && processed_pos < buf_pos) {
-            memmove(buf.get(), buf.get() + processed_pos, buf_pos - processed_pos);
-            buf_pos -= processed_pos;
-        } else if (processed_pos == buf_pos) {
-            buf_pos = 0;  // All data processed
-        }
+            // Process all complete commands in the buffer
+            size_t processed_pos = 0;
+            while (processed_pos < buf_pos) {
+                try {
+                    RespParser parser(buf.get() + processed_pos, buf_pos - processed_pos);
+                    auto command = parser.parse();
 
-        // Prevent buffer overflow
-        if (buf_pos >= BUFFER_SIZE - 1024) {
-            // Buffer nearly full, send error and close
-            const char* error = "-ERR Command too large\r\n";
-            write(client_fd, error, strlen(error));
-            return;
+                    std::string response = processor.process_command(command);
+                    ssize_t written = write(client_fd, response.c_str(), response.length());
+                    if (written < 0) {
+                        goto cleanup;
+                    }
+
+                    // Move past the processed command
+                    size_t consumed = parser.get_consumed_bytes();
+                    processed_pos += consumed;
+
+                } catch (const std::runtime_error& e) {
+                    const std::string& err_msg = e.what();
+                    if (err_msg == "Incomplete command") {
+                        // Not enough data for a complete command, wait for more
+                        break;
+                    } else {
+                        std::string error = "-ERR " + err_msg + "\r\n";
+                        write(client_fd, error.c_str(), error.length());
+                        goto cleanup;
+                    }
+                }
+            }
+
+            // Move remaining unprocessed data to the beginning of buffer
+            if (processed_pos > 0 && processed_pos < buf_pos) {
+                memmove(buf.get(), buf.get() + processed_pos, buf_pos - processed_pos);
+                buf_pos -= processed_pos;
+            } else if (processed_pos == buf_pos) {
+                buf_pos = 0;  // All data processed
+            }
+
+            // Prevent buffer overflow
+            if (buf_pos >= BUFFER_SIZE - 1024) {
+                // Buffer nearly full, send error and close
+                const char* error = "-ERR Command too large\r\n";
+                write(client_fd, error, strlen(error));
+                goto cleanup;
+            }
         }
     }
+
+cleanup:
+    client_processors.erase(client_fd);
+    close(notify_read_fd);
+    close(notify_write_fd);
 }
 
 void periodic_save() {
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(30)); // Save every 30 seconds
-        if (db.save_to_file(DB_FILE)) {
-            printf("Database saved successfully\n");
+        if (db.save_rdb(DB_FILE)) {
+            printf("Database saved to RDB successfully\n");
         } else {
-            printf("Failed to save database\n");
+            printf("Failed to save database to RDB\n");
         }
     }
 }
 
 int main() {
     // Load database from file on startup
-    if (db.load_from_file(DB_FILE)) {
-        printf("Database loaded from file\n");
+    if (db.load_rdb(DB_FILE)) {
+        printf("Database loaded from RDB file\n");
     } else {
-        printf("No existing database file found, starting fresh\n");
+        printf("No existing RDB file found, starting fresh\n");
     }
 
     // Start periodic save thread

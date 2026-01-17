@@ -204,9 +204,9 @@ Developed using Grok Code by xAI.
 ## Roadmap
 
 - [x] **Transaction Support**: MULTI/EXEC/DISCARD commands implemented
-- [ ] Complete Sets data structure implementation
-- [ ] Complete Hashes data structure implementation
-- [ ] Complete Sorted Sets data structure implementation
+- [x] **Complete Sets data structure**: SADD, SREM, SISMEMBER, SCARD, SMEMBERS, SINTER, SUNION, SDIFF
+- [x] **Complete Hashes data structure**: HSET, HGET, HDEL, HLEN, HKEYS, HVALS, HGETALL
+- [x] **Complete Sorted Sets data structure**: ZADD, ZREM, ZCARD, ZRANGE, ZREVRANGE, ZSCORE, ZRANK
 - [ ] WATCH/UNWATCH commands for optimistic concurrency
 - [ ] Key expiration (TTL, EXPIRE, PEXPIRE commands)
 - [ ] Disk-based persistence (RDB/AOF formats)

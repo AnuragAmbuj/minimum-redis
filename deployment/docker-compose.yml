@@ -1,0 +1,41 @@
+# MinimalRedis docker-compose.yml
+
+version: '3.8'
+
+services:
+  minimalredis:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "echo", "PING", "|", "nc", "localhost", "6379"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - redis-net
+
+  # Optional: Redis CLI for testing
+  redis-cli:
+    image: redis:alpine
+    command: ["redis-cli", "-h", "minimalredis", "monitor"]
+    depends_on:
+      - minimalredis
+    networks:
+      - redis-net
+    profiles:
+      - debug
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  redis-net:
+    driver: bridge

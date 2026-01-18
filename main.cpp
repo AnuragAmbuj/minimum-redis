@@ -1,20 +1,21 @@
-#include <thread>
-#include <chrono>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <cerrno>
-#include <cstring>
-#include <sys/select.h>
-#include <unordered_map>
 #include "db.h"
 #include "commands.h"
 #include "resp.h"
+#include <arpa/inet.h>
+#include <cerrno>
+#include <chrono>
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <thread>
+#include <unistd.h>
+#include <unordered_map>
 
 Database db;
 std::unordered_map<int, CommandProcessor*> client_processors;
+
+constexpr int DEFAULT_PORT = 6379;
+constexpr size_t BUFFER_SIZE = 8192;  // 8KB buffer for better performance
 
 void handle_client(int client_fd);
 void periodic_save();
@@ -38,7 +39,7 @@ void handle_client(int client_fd) {
     CommandProcessor processor(db, client_fd, notify_write_fd, &client_processors);
     client_processors[client_fd] = &processor;
 
-    const size_t BUFFER_SIZE = 8192;  // 8KB buffer for better performance
+    // Use constexpr BUFFER_SIZE defined at top of file
     std::unique_ptr<char[]> buf(new char[BUFFER_SIZE]);
     size_t buf_pos = 0;
 
@@ -163,7 +164,7 @@ int main() {
 
     struct sockaddr_in addr = {};
     addr.sin_family = AF_INET;
-    addr.sin_port = ntohs(6379);
+    addr.sin_port = ntohs(DEFAULT_PORT);
     addr.sin_addr.s_addr = ntohl(INADDR_ANY);
 
     int rv = bind(fd, (const sockaddr *)&addr, sizeof(addr));
@@ -177,7 +178,7 @@ int main() {
         die("listen()");
     }
 
-    printf("MinimalRedis server listening on port 6379\n");
+        printf("MinimalRedis server listening on port %d\n", DEFAULT_PORT);
 
     while (true) {
         struct sockaddr_in client_addr = {};

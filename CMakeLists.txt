@@ -37,8 +37,20 @@ add_executable(MinimalRedisTests
 target_link_libraries(MinimalRedis ${LUA_LIBRARIES})
 target_link_libraries(MinimalRedisTests GTest::gtest GTest::gtest_main ${LUA_LIBRARIES})
 
+# Client test executable
+add_executable(MinimalRedisClientTests
+        tests/test_main.cpp
+        tests/test_client.cpp
+        clients/tui/redis_client.h clients/tui/redis_client.cpp)
+
+target_link_libraries(MinimalRedisClientTests GTest::gtest GTest::gtest_main)
+
 # Include source directory for test headers
 target_include_directories(MinimalRedisTests PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(MinimalRedisClientTests PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/clients/tui)
+
+# Add client tests
+add_test(NAME MinimalRedisClientTests COMMAND MinimalRedisClientTests)
 include_directories(${LUA_INCLUDE_DIR})
 
 # Add test

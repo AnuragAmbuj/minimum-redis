@@ -209,6 +209,33 @@ clients/tui/redis_client.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisClientTests.dir/build.make CMakeFiles/MinimalRedisClientTests.dir/clients/tui/redis_client.cpp.s
 .PHONY : clients/tui/redis_client.cpp.s
 
+cluster.o: cluster.cpp.o
+.PHONY : cluster.o
+
+# target to build an object file
+cluster.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/cluster.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/cluster.cpp.o
+.PHONY : cluster.cpp.o
+
+cluster.i: cluster.cpp.i
+.PHONY : cluster.i
+
+# target to preprocess a source file
+cluster.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/cluster.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/cluster.cpp.i
+.PHONY : cluster.cpp.i
+
+cluster.s: cluster.cpp.s
+.PHONY : cluster.s
+
+# target to generate assembly for a file
+cluster.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/cluster.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/cluster.cpp.s
+.PHONY : cluster.cpp.s
+
 commands.o: commands.cpp.o
 .PHONY : commands.o
 
@@ -481,6 +508,9 @@ help:
 	@echo "... clients/tui/redis_client.o"
 	@echo "... clients/tui/redis_client.i"
 	@echo "... clients/tui/redis_client.s"
+	@echo "... cluster.o"
+	@echo "... cluster.i"
+	@echo "... cluster.s"
 	@echo "... commands.o"
 	@echo "... commands.i"
 	@echo "... commands.s"

@@ -108,6 +108,9 @@ private:
     std::string handle_evalsha(const std::vector<std::shared_ptr<RespValue>>& args);
     std::string handle_script(const std::vector<std::shared_ptr<RespValue>>& args);
 
+    // Cluster commands
+    std::string handle_cluster(const std::vector<std::shared_ptr<RespValue>>& args);
+
 public:
     CommandProcessor(Database& database, int fd, int notify_fd, std::unordered_map<int, CommandProcessor*>* processors = nullptr) : db(database), client_fd(fd), notify_write_fd(notify_fd), client_processors_ptr(processors) {
         lua_engine = std::make_unique<LuaScriptingEngine>(db);

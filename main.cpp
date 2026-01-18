@@ -1,6 +1,7 @@
 #include "db.h"
 #include "commands.h"
 #include "resp.h"
+#include "cluster.h"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
@@ -142,6 +143,9 @@ void periodic_save() {
 }
 
 int main() {
+    // Initialize cluster configuration for MVC demo
+    initialize_cluster_mvc();
+
     // Load database from file on startup
     if (db.load_rdb(DB_FILE)) {
         printf("Database loaded from RDB file\n");

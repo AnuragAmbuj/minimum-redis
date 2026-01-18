@@ -92,12 +92,12 @@ clean: CMakeFiles/coverage.dir/clean
 CMakeFiles/MinimalRedis.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=1,2,3,4,5,6 "Built target MinimalRedis"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Built target MinimalRedis"
 .PHONY : CMakeFiles/MinimalRedis.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/MinimalRedis.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles 6
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles 7
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/MinimalRedis.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles 0
 .PHONY : CMakeFiles/MinimalRedis.dir/rule
@@ -109,7 +109,7 @@ MinimalRedis: CMakeFiles/MinimalRedis.dir/rule
 # codegen rule for target.
 CMakeFiles/MinimalRedis.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=1,2,3,4,5,6 "Finished codegen for target MinimalRedis"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Finished codegen for target MinimalRedis"
 .PHONY : CMakeFiles/MinimalRedis.dir/codegen
 
 # clean rule for target.
@@ -124,12 +124,12 @@ CMakeFiles/MinimalRedis.dir/clean:
 CMakeFiles/MinimalRedisTests.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=11,12,13,14,15,16,17,18,19 "Built target MinimalRedisTests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=12,13,14,15,16,17,18,19,20,21 "Built target MinimalRedisTests"
 .PHONY : CMakeFiles/MinimalRedisTests.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/MinimalRedisTests.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles 9
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles 10
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/MinimalRedisTests.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles 0
 .PHONY : CMakeFiles/MinimalRedisTests.dir/rule
@@ -141,7 +141,7 @@ MinimalRedisTests: CMakeFiles/MinimalRedisTests.dir/rule
 # codegen rule for target.
 CMakeFiles/MinimalRedisTests.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=11,12,13,14,15,16,17,18,19 "Finished codegen for target MinimalRedisTests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=12,13,14,15,16,17,18,19,20,21 "Finished codegen for target MinimalRedisTests"
 .PHONY : CMakeFiles/MinimalRedisTests.dir/codegen
 
 # clean rule for target.
@@ -156,7 +156,7 @@ CMakeFiles/MinimalRedisTests.dir/clean:
 CMakeFiles/MinimalRedisClientTests.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisClientTests.dir/build.make CMakeFiles/MinimalRedisClientTests.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisClientTests.dir/build.make CMakeFiles/MinimalRedisClientTests.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=7,8,9,10 "Built target MinimalRedisClientTests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=8,9,10,11 "Built target MinimalRedisClientTests"
 .PHONY : CMakeFiles/MinimalRedisClientTests.dir/all
 
 # Build rule for subdir invocation for target.
@@ -173,7 +173,7 @@ MinimalRedisClientTests: CMakeFiles/MinimalRedisClientTests.dir/rule
 # codegen rule for target.
 CMakeFiles/MinimalRedisClientTests.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisClientTests.dir/build.make CMakeFiles/MinimalRedisClientTests.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=7,8,9,10 "Finished codegen for target MinimalRedisClientTests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=8,9,10,11 "Finished codegen for target MinimalRedisClientTests"
 .PHONY : CMakeFiles/MinimalRedisClientTests.dir/codegen
 
 # clean rule for target.
@@ -188,12 +188,12 @@ CMakeFiles/MinimalRedisClientTests.dir/clean:
 CMakeFiles/coverage.dir/all: CMakeFiles/MinimalRedisTests.dir/all
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/coverage.dir/build.make CMakeFiles/coverage.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/coverage.dir/build.make CMakeFiles/coverage.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=20 "Built target coverage"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=22 "Built target coverage"
 .PHONY : CMakeFiles/coverage.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/coverage.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles 10
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles 11
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/coverage.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles 0
 .PHONY : CMakeFiles/coverage.dir/rule
@@ -205,7 +205,7 @@ coverage: CMakeFiles/coverage.dir/rule
 # codegen rule for target.
 CMakeFiles/coverage.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/coverage.dir/build.make CMakeFiles/coverage.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=20 "Finished codegen for target coverage"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=22 "Finished codegen for target coverage"
 .PHONY : CMakeFiles/coverage.dir/codegen
 
 # clean rule for target.

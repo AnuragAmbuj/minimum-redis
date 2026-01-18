@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/MinimalRedis.dir/cluster.cpp.o"
+  "CMakeFiles/MinimalRedis.dir/cluster.cpp.o.d"
   "CMakeFiles/MinimalRedis.dir/commands.cpp.o"
   "CMakeFiles/MinimalRedis.dir/commands.cpp.o.d"
   "CMakeFiles/MinimalRedis.dir/db.cpp.o"

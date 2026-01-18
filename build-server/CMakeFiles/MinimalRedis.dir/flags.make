@@ -6,7 +6,7 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/opt/homebrew/opt/lua/include/lua5.4
 
-CXX_FLAGSarm64 = -O3 -march=native -g -O0 -fprofile-arcs -ftest-coverage -O3 -DNDEBUG -std=gnu++20 -arch arm64
+CXX_FLAGSarm64 =  -g -O0 -fprofile-arcs -ftest-coverage -std=gnu++20 -arch arm64
 
-CXX_FLAGS = -O3 -march=native -g -O0 -fprofile-arcs -ftest-coverage -O3 -DNDEBUG -std=gnu++20 -arch arm64
+CXX_FLAGS =  -g -O0 -fprofile-arcs -ftest-coverage -std=gnu++20 -arch arm64
 

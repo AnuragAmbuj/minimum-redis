@@ -145,7 +145,7 @@ void Database::increment_mod_count(const std::string& key) {
     if (it != data.end()) {
         it->second.mod_count++;
     } else {
-        // Create a new entry with mod_count = 1
+
         RedisValue val(RedisType::String);
         val.mod_count = 1;
         data[key] = val;
@@ -566,7 +566,7 @@ long long Database::zrank(const std::string& key, const std::string& member) {
     return -1; // Not found
 }
 
-// TODO: Implement persistence for all data types
+
 bool Database::save_to_file(const std::string& filename) {
     // Temporary implementation - only saves strings
     std::ofstream file(filename);
@@ -578,7 +578,7 @@ bool Database::save_to_file(const std::string& filename) {
         if (pair.second.type == RedisType::String) {
             file << "string:" << pair.first << "=" << pair.second.str_val << "\n";
         }
-        // TODO: Add other types
+
     }
 
     file.close();
@@ -599,7 +599,7 @@ bool Database::load_from_file(const std::string& filename) {
             if (type_str == "string") {
                 set(key, value);
             }
-            // TODO: Add other types
+
         }
     }
 

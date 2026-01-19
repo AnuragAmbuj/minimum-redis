@@ -20,8 +20,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 # Main executable
-add_executable(MinimalRedis main.cpp resp.cpp db.cpp commands.cpp lua_scripting.cpp
-        resp.h db.h commands.h redis_value.h lua_scripting.h
+add_executable(MinimalRedis main.cpp resp.cpp db.cpp commands.cpp lua_scripting.cpp raft.cpp wal.cpp cluster_manager.cpp
+        resp.h db.h commands.h redis_value.h lua_scripting.h raft.h wal.h cluster_manager.h
         net/networks.h)
 
 # Test executable
@@ -30,8 +30,8 @@ add_executable(MinimalRedisTests
         tests/test_resp.cpp
         tests/test_database.cpp
         tests/test_commands.cpp
-        resp.cpp db.cpp commands.cpp lua_scripting.cpp
-        resp.h db.h commands.h redis_value.h lua_scripting.h
+        resp.cpp db.cpp commands.cpp lua_scripting.cpp raft.cpp wal.cpp cluster_manager.cpp
+        resp.h db.h commands.h redis_value.h lua_scripting.h raft.h wal.h cluster_manager.h
         net/networks.h)
 
 target_link_libraries(MinimalRedis ${LUA_LIBRARIES})

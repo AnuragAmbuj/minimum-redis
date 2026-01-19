@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/MinimalRedis.dir/cluster_manager.cpp.o"
+  "CMakeFiles/MinimalRedis.dir/cluster_manager.cpp.o.d"
   "CMakeFiles/MinimalRedis.dir/commands.cpp.o"
   "CMakeFiles/MinimalRedis.dir/commands.cpp.o.d"
   "CMakeFiles/MinimalRedis.dir/db.cpp.o"
@@ -7,8 +9,12 @@ file(REMOVE_RECURSE
   "CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.o.d"
   "CMakeFiles/MinimalRedis.dir/main.cpp.o"
   "CMakeFiles/MinimalRedis.dir/main.cpp.o.d"
+  "CMakeFiles/MinimalRedis.dir/raft.cpp.o"
+  "CMakeFiles/MinimalRedis.dir/raft.cpp.o.d"
   "CMakeFiles/MinimalRedis.dir/resp.cpp.o"
   "CMakeFiles/MinimalRedis.dir/resp.cpp.o.d"
+  "CMakeFiles/MinimalRedis.dir/wal.cpp.o"
+  "CMakeFiles/MinimalRedis.dir/wal.cpp.o.d"
   "MinimalRedis"
   "MinimalRedis.pdb"
 )

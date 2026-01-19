@@ -1,10 +1,14 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/MinimalRedisTests.dir/cluster_manager.cpp.o"
+  "CMakeFiles/MinimalRedisTests.dir/cluster_manager.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/commands.cpp.o"
   "CMakeFiles/MinimalRedisTests.dir/commands.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/db.cpp.o"
   "CMakeFiles/MinimalRedisTests.dir/db.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/lua_scripting.cpp.o"
   "CMakeFiles/MinimalRedisTests.dir/lua_scripting.cpp.o.d"
+  "CMakeFiles/MinimalRedisTests.dir/raft.cpp.o"
+  "CMakeFiles/MinimalRedisTests.dir/raft.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/resp.cpp.o"
   "CMakeFiles/MinimalRedisTests.dir/resp.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/tests/test_commands.cpp.o"
@@ -15,6 +19,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/MinimalRedisTests.dir/tests/test_main.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/tests/test_resp.cpp.o"
   "CMakeFiles/MinimalRedisTests.dir/tests/test_resp.cpp.o.d"
+  "CMakeFiles/MinimalRedisTests.dir/wal.cpp.o"
+  "CMakeFiles/MinimalRedisTests.dir/wal.cpp.o.d"
   "MinimalRedisTests"
   "MinimalRedisTests.pdb"
 )

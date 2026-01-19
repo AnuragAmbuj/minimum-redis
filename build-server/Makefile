@@ -209,6 +209,33 @@ clients/tui/redis_client.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisClientTests.dir/build.make CMakeFiles/MinimalRedisClientTests.dir/clients/tui/redis_client.cpp.s
 .PHONY : clients/tui/redis_client.cpp.s
 
+cluster_manager.o: cluster_manager.cpp.o
+.PHONY : cluster_manager.o
+
+# target to build an object file
+cluster_manager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/cluster_manager.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/cluster_manager.cpp.o
+.PHONY : cluster_manager.cpp.o
+
+cluster_manager.i: cluster_manager.cpp.i
+.PHONY : cluster_manager.i
+
+# target to preprocess a source file
+cluster_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/cluster_manager.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/cluster_manager.cpp.i
+.PHONY : cluster_manager.cpp.i
+
+cluster_manager.s: cluster_manager.cpp.s
+.PHONY : cluster_manager.s
+
+# target to generate assembly for a file
+cluster_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/cluster_manager.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/cluster_manager.cpp.s
+.PHONY : cluster_manager.cpp.s
+
 commands.o: commands.cpp.o
 .PHONY : commands.o
 
@@ -313,6 +340,33 @@ main.s: main.cpp.s
 main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/main.cpp.s
 .PHONY : main.cpp.s
+
+raft.o: raft.cpp.o
+.PHONY : raft.o
+
+# target to build an object file
+raft.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/raft.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/raft.cpp.o
+.PHONY : raft.cpp.o
+
+raft.i: raft.cpp.i
+.PHONY : raft.i
+
+# target to preprocess a source file
+raft.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/raft.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/raft.cpp.i
+.PHONY : raft.cpp.i
+
+raft.s: raft.cpp.s
+.PHONY : raft.s
+
+# target to generate assembly for a file
+raft.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/raft.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/raft.cpp.s
+.PHONY : raft.cpp.s
 
 resp.o: resp.cpp.o
 .PHONY : resp.o
@@ -464,6 +518,33 @@ tests/test_resp.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/tests/test_resp.cpp.s
 .PHONY : tests/test_resp.cpp.s
 
+wal.o: wal.cpp.o
+.PHONY : wal.o
+
+# target to build an object file
+wal.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/wal.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/wal.cpp.o
+.PHONY : wal.cpp.o
+
+wal.i: wal.cpp.i
+.PHONY : wal.i
+
+# target to preprocess a source file
+wal.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/wal.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/wal.cpp.i
+.PHONY : wal.cpp.i
+
+wal.s: wal.cpp.s
+.PHONY : wal.s
+
+# target to generate assembly for a file
+wal.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/wal.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/wal.cpp.s
+.PHONY : wal.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -481,6 +562,9 @@ help:
 	@echo "... clients/tui/redis_client.o"
 	@echo "... clients/tui/redis_client.i"
 	@echo "... clients/tui/redis_client.s"
+	@echo "... cluster_manager.o"
+	@echo "... cluster_manager.i"
+	@echo "... cluster_manager.s"
 	@echo "... commands.o"
 	@echo "... commands.i"
 	@echo "... commands.s"
@@ -493,6 +577,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... raft.o"
+	@echo "... raft.i"
+	@echo "... raft.s"
 	@echo "... resp.o"
 	@echo "... resp.i"
 	@echo "... resp.s"
@@ -511,6 +598,9 @@ help:
 	@echo "... tests/test_resp.o"
 	@echo "... tests/test_resp.i"
 	@echo "... tests/test_resp.s"
+	@echo "... wal.o"
+	@echo "... wal.i"
+	@echo "... wal.s"
 .PHONY : help
 
 

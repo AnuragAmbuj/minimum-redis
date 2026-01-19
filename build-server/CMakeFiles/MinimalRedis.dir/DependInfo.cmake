@@ -8,11 +8,14 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/Users/anuragambuj/CLionProjects/MinimalRedis/cluster_manager.cpp" "CMakeFiles/MinimalRedis.dir/cluster_manager.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/cluster_manager.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/commands.cpp" "CMakeFiles/MinimalRedis.dir/commands.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/commands.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/db.cpp" "CMakeFiles/MinimalRedis.dir/db.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/db.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/lua_scripting.cpp" "CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/main.cpp" "CMakeFiles/MinimalRedis.dir/main.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/main.cpp.o.d"
+  "/Users/anuragambuj/CLionProjects/MinimalRedis/raft.cpp" "CMakeFiles/MinimalRedis.dir/raft.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/raft.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/resp.cpp" "CMakeFiles/MinimalRedis.dir/resp.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/resp.cpp.o.d"
+  "/Users/anuragambuj/CLionProjects/MinimalRedis/wal.cpp" "CMakeFiles/MinimalRedis.dir/wal.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/wal.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

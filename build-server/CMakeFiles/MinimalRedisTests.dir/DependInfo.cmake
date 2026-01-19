@@ -13,6 +13,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/anuragambuj/CLionProjects/MinimalRedis/db.cpp" "CMakeFiles/MinimalRedisTests.dir/db.cpp.o" "gcc" "CMakeFiles/MinimalRedisTests.dir/db.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/lua_scripting.cpp" "CMakeFiles/MinimalRedisTests.dir/lua_scripting.cpp.o" "gcc" "CMakeFiles/MinimalRedisTests.dir/lua_scripting.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/resp.cpp" "CMakeFiles/MinimalRedisTests.dir/resp.cpp.o" "gcc" "CMakeFiles/MinimalRedisTests.dir/resp.cpp.o.d"
+  "/Users/anuragambuj/CLionProjects/MinimalRedis/save_daemon.cpp" "CMakeFiles/MinimalRedisTests.dir/save_daemon.cpp.o" "gcc" "CMakeFiles/MinimalRedisTests.dir/save_daemon.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/tests/test_commands.cpp" "CMakeFiles/MinimalRedisTests.dir/tests/test_commands.cpp.o" "gcc" "CMakeFiles/MinimalRedisTests.dir/tests/test_commands.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/tests/test_database.cpp" "CMakeFiles/MinimalRedisTests.dir/tests/test_database.cpp.o" "gcc" "CMakeFiles/MinimalRedisTests.dir/tests/test_database.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/tests/test_main.cpp" "CMakeFiles/MinimalRedisTests.dir/tests/test_main.cpp.o" "gcc" "CMakeFiles/MinimalRedisTests.dir/tests/test_main.cpp.o.d"

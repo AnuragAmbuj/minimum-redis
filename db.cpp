@@ -6,9 +6,11 @@
 #include "redis_value.h"
 #include <fstream>
 #include <sstream>
+#include <iostream>
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <unistd.h>
 
 // String operations
 bool Database::set(const std::string& key, const std::string& value) {
@@ -729,6 +731,7 @@ bool Database::save_rdb(const std::string& filename) {
 
     file.write(reinterpret_cast<const char*>(&RDB_OPCODE_EOF), 1);
 
+    file.flush();  // Ensure all data is written
     file.close();
     return true;
 }

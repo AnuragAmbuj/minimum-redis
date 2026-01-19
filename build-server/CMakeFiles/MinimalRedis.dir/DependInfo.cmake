@@ -14,6 +14,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/anuragambuj/CLionProjects/MinimalRedis/lua_scripting.cpp" "CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/main.cpp" "CMakeFiles/MinimalRedis.dir/main.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/main.cpp.o.d"
   "/Users/anuragambuj/CLionProjects/MinimalRedis/resp.cpp" "CMakeFiles/MinimalRedis.dir/resp.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/resp.cpp.o.d"
+  "/Users/anuragambuj/CLionProjects/MinimalRedis/save_daemon.cpp" "CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o" "gcc" "CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

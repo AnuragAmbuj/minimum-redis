@@ -2,6 +2,7 @@
 #include "commands.h"
 #include "resp.h"
 #include "cluster.h"
+#include "save_daemon.h"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
@@ -131,16 +132,8 @@ cleanup:
     close(notify_write_fd);
 }
 
-void periodic_save() {
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(30)); // Save every 30 seconds
-        if (db.save_rdb(DB_FILE)) {
-            printf("Database saved to RDB successfully\n");
-        } else {
-            printf("Failed to save database to RDB\n");
-        }
-    }
-}
+// SaveDaemon instance for periodic saves
+SaveDaemon* save_daemon = nullptr;
 
 int main() {
     // Initialize cluster configuration for MVC demo
@@ -153,9 +146,12 @@ int main() {
         printf("No existing RDB file found, starting fresh\n");
     }
 
-    // Start periodic save thread
-    std::thread save_thread(periodic_save);
-    save_thread.detach();
+    // Initialize and start save daemon
+    save_daemon = new SaveDaemon(DB_FILE, [](const std::string& file) {
+        return db.save_rdb(file);
+    });
+    save_daemon->start();
+    printf("Save daemon started (interval: %lld seconds)\n", save_daemon->get_interval().count());
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
@@ -201,8 +197,17 @@ int main() {
             handle_client(client_fd);
             close(client_fd);
         });
-        client_thread.detach();  // Let thread run independently
+        client_thread.detach(); // Let thread run independently
         printf("Client connection closed\n");
     }
+
+    // Cleanup save daemon
+    if (save_daemon) {
+        printf("Stopping save daemon...\n");
+        save_daemon->stop();
+        delete save_daemon;
+        printf("Save daemon stopped\n");
+    }
+
     return 0;
 }

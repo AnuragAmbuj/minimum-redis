@@ -44,8 +44,8 @@ public:
     void set_interval(std::chrono::seconds interval);
     
     // Status
-    bool is_running() const { return running; }
-    int get_successful_saves() const { return successful_saves; }
-    int get_failed_saves() const { return failed_saves; }
-    std::chrono::seconds get_interval() const { return save_interval; }
+    bool is_running() const noexcept { return running; }
+    int get_successful_saves() const noexcept { return successful_saves; }
+    int get_failed_saves() const noexcept { return failed_saves; }
+    std::chrono::seconds get_interval() const noexcept { return save_interval; }
 };

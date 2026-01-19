@@ -1,4 +1,5 @@
 #include "redis_client.h"
+#include <array>
 #include <cstring>
 #include <unistd.h>
 #include <sys/types.h>
@@ -75,15 +76,15 @@ std::string RedisClient::get_response(int timeout_ms) {
     int ready = select(sock_fd + 1, &read_fds, nullptr, nullptr, &tv);
     if (ready <= 0) return "";
 
-    char buffer[8192];
-    ssize_t n = recv(sock_fd, buffer, sizeof(buffer) - 1, 0);
+    std::array<char, 8192> buffer;
+    ssize_t n = recv(sock_fd, buffer.data(), buffer.size() - 1, 0);
     if (n <= 0) {
         connected = false;
         return "";
     }
 
     buffer[n] = '\0';
-    parser.append(buffer);
+    parser.append(std::string(buffer.data()));
 
     std::string msg = parser.get_next_message();
     return msg;

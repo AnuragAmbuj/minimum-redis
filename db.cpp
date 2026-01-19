@@ -4,6 +4,7 @@
 
 #include "db.h"
 #include "redis_value.h"
+#include <array>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -742,8 +743,8 @@ bool Database::load_rdb(const std::string& filename) {
         return false;
     }
 
-    char magic[5];
-    if (!file.read(magic, 5) || strncmp(magic, RDB_MAGIC, 5) != 0) {
+    std::array<char, 5> magic;
+    if (!file.read(magic.data(), 5) || strncmp(magic.data(), RDB_MAGIC, 5) != 0) {
         return false;
     }
 

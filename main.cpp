@@ -1,9 +1,10 @@
 #include "db.h"
+#include "cluster.h"
 #include "commands.h"
 #include "resp.h"
-#include "cluster.h"
 #include "save_daemon.h"
-#include <iostream>
+#include <array>
+#include <vector>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
@@ -16,9 +17,6 @@
 
 Database db;
 std::unordered_map<int, CommandProcessor*> client_processors;
-
-// SaveDaemon instance for periodic saves
-SaveDaemon* save_daemon = nullptr;
 
 constexpr int DEFAULT_PORT = 6379;
 constexpr size_t BUFFER_SIZE = 8192;  // 8KB buffer for better performance
@@ -35,18 +33,18 @@ void die(const char *msg) {
 }
 
 void handle_client(int client_fd) {
-    int pipe_fds[2];
-    if (pipe(pipe_fds) == -1) {
+    std::array<int, 2> pipe_fds;
+    if (pipe(pipe_fds.data()) == -1) {
         return;
     }
     int notify_read_fd = pipe_fds[0];
     int notify_write_fd = pipe_fds[1];
 
-    CommandProcessor processor(db, client_fd, notify_write_fd, &client_processors, save_daemon);
+    CommandProcessor processor(db, client_fd, notify_write_fd, &client_processors);
     client_processors[client_fd] = &processor;
 
     // Use constexpr BUFFER_SIZE defined at top of file
-    std::unique_ptr<char[]> buf(new char[BUFFER_SIZE]);
+    std::vector<char> buf(BUFFER_SIZE);
     size_t buf_pos = 0;
 
     fd_set read_fds;
@@ -75,7 +73,7 @@ void handle_client(int client_fd) {
             }
         }
         if (FD_ISSET(client_fd, &read_fds)) {
-            ssize_t n = read(client_fd, buf.get() + buf_pos, BUFFER_SIZE - buf_pos - 1);
+            ssize_t n = read(client_fd, buf.data() + buf_pos, BUFFER_SIZE - buf_pos - 1);
             if (n <= 0) {
                 break;  // Connection closed or error
             }
@@ -86,7 +84,7 @@ void handle_client(int client_fd) {
             size_t processed_pos = 0;
             while (processed_pos < buf_pos) {
                 try {
-                    RespParser parser(buf.get() + processed_pos, buf_pos - processed_pos);
+                    RespParser parser(buf.data() + processed_pos, buf_pos - processed_pos);
                     auto command = parser.parse();
 
                     std::string response = processor.process_command(command);
@@ -114,7 +112,7 @@ void handle_client(int client_fd) {
 
             // Move remaining unprocessed data to the beginning of buffer
             if (processed_pos > 0 && processed_pos < buf_pos) {
-                memmove(buf.get(), buf.get() + processed_pos, buf_pos - processed_pos);
+                memmove(buf.data(), buf.data() + processed_pos, buf_pos - processed_pos);
                 buf_pos -= processed_pos;
             } else if (processed_pos == buf_pos) {
                 buf_pos = 0;  // All data processed
@@ -136,6 +134,9 @@ cleanup:
     close(notify_write_fd);
 }
 
+// SaveDaemon instance for periodic saves
+std::unique_ptr<SaveDaemon> save_daemon;
+
 auto main() -> int {
     // Initialize cluster configuration for MVC demo
     initialize_cluster_mvc();
@@ -147,25 +148,10 @@ auto main() -> int {
         printf("No existing RDB file found, starting fresh\n");
     }
 
-    // Initialize and start save daemon with event publishing
-    save_daemon = new SaveDaemon(DB_FILE,
-        [](const std::string& file) {
-            return db.save_rdb(file);
-        },
-        [](const std::string& channel, const std::string& message) {
-            // Publish save events via Pub/Sub (similar to PUBLISH command)
-            auto subscribers = db.get_pubsub().get_subscribers(channel);
-            std::string channel_len = std::to_string(channel.length());
-            std::string message_len = std::to_string(message.length());
-            std::string pubsub_msg = "*3\r\n$7\r\nmessage\r\n$" + channel_len + "\r\n" + channel + "\r\n$" + message_len + "\r\n" + message + "\r\n";
-
-            // Send to all subscribers (simplified - no client_processors_ptr check for now)
-            for (int sub_fd : subscribers) {
-                // In a real implementation, we'd need access to client_processors to queue messages
-                // For now, just log the event
-                std::cout << "[SaveEvent] " << channel << ": " << message << " sent to client " << sub_fd << std::endl;
-            }
-        });
+    // Initialize and start save daemon
+    save_daemon = std::make_unique<SaveDaemon>(DB_FILE, [](const std::string& file) {
+        return db.save_rdb(file);
+    });
     save_daemon->start();
     printf("Save daemon started (interval: %lld seconds)\n", save_daemon->get_interval().count());
 
@@ -183,7 +169,7 @@ auto main() -> int {
     addr.sin_port = ntohs(DEFAULT_PORT);
     addr.sin_addr.s_addr = ntohl(INADDR_ANY);
 
-    int rv = bind(fd, (const sockaddr *)&addr, sizeof(addr));
+    int rv = bind(fd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr));
 
     if (rv) {
         die("bind()");
@@ -200,7 +186,7 @@ auto main() -> int {
         struct sockaddr_in client_addr = {};
         socklen_t client_addr_len = sizeof(client_addr);
 
-        int client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_addr_len);
+        int client_fd = accept(fd, reinterpret_cast<struct sockaddr *>(&client_addr), &client_addr_len);
 
         if (client_fd < 0) {
             fprintf(stderr, "Accept failed\n");
@@ -209,7 +195,7 @@ auto main() -> int {
 
         printf("New client connection\n");
         // Handle client connection in a new thread
-        std::thread client_thread([client_fd]() {
+        std::thread client_thread([client_fd]() -> void {
             handle_client(client_fd);
             close(client_fd);
         });
@@ -221,7 +207,6 @@ auto main() -> int {
     if (save_daemon) {
         printf("Stopping save daemon...\n");
         save_daemon->stop();
-        delete save_daemon;
         printf("Save daemon stopped\n");
     }
 

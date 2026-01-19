@@ -3,6 +3,7 @@
 #include "resp.h"
 #include "cluster.h"
 #include "save_daemon.h"
+#include <iostream>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
@@ -15,6 +16,9 @@
 
 Database db;
 std::unordered_map<int, CommandProcessor*> client_processors;
+
+// SaveDaemon instance for periodic saves
+SaveDaemon* save_daemon = nullptr;
 
 constexpr int DEFAULT_PORT = 6379;
 constexpr size_t BUFFER_SIZE = 8192;  // 8KB buffer for better performance
@@ -38,7 +42,7 @@ void handle_client(int client_fd) {
     int notify_read_fd = pipe_fds[0];
     int notify_write_fd = pipe_fds[1];
 
-    CommandProcessor processor(db, client_fd, notify_write_fd, &client_processors);
+    CommandProcessor processor(db, client_fd, notify_write_fd, &client_processors, save_daemon);
     client_processors[client_fd] = &processor;
 
     // Use constexpr BUFFER_SIZE defined at top of file
@@ -132,10 +136,7 @@ cleanup:
     close(notify_write_fd);
 }
 
-// SaveDaemon instance for periodic saves
-SaveDaemon* save_daemon = nullptr;
-
-int main() {
+auto main() -> int {
     // Initialize cluster configuration for MVC demo
     initialize_cluster_mvc();
 
@@ -146,10 +147,25 @@ int main() {
         printf("No existing RDB file found, starting fresh\n");
     }
 
-    // Initialize and start save daemon
-    save_daemon = new SaveDaemon(DB_FILE, [](const std::string& file) {
-        return db.save_rdb(file);
-    });
+    // Initialize and start save daemon with event publishing
+    save_daemon = new SaveDaemon(DB_FILE,
+        [](const std::string& file) {
+            return db.save_rdb(file);
+        },
+        [](const std::string& channel, const std::string& message) {
+            // Publish save events via Pub/Sub (similar to PUBLISH command)
+            auto subscribers = db.get_pubsub().get_subscribers(channel);
+            std::string channel_len = std::to_string(channel.length());
+            std::string message_len = std::to_string(message.length());
+            std::string pubsub_msg = "*3\r\n$7\r\nmessage\r\n$" + channel_len + "\r\n" + channel + "\r\n$" + message_len + "\r\n" + message + "\r\n";
+
+            // Send to all subscribers (simplified - no client_processors_ptr check for now)
+            for (int sub_fd : subscribers) {
+                // In a real implementation, we'd need access to client_processors to queue messages
+                // For now, just log the event
+                std::cout << "[SaveEvent] " << channel << ": " << message << " sent to client " << sub_fd << std::endl;
+            }
+        });
     save_daemon->start();
     printf("Save daemon started (interval: %lld seconds)\n", save_daemon->get_interval().count());
 

@@ -20,6 +20,7 @@ private:
     std::chrono::seconds save_interval{30};
     std::string db_file;
     std::function<bool(const std::string&)> save_function;
+    std::function<void(const std::string&, const std::string&)> publish_event; // Optional event publisher
     
     // Statistics
     std::atomic<int> successful_saves{0};
@@ -30,7 +31,8 @@ private:
     void perform_save();
 
 public:
-    SaveDaemon(const std::string& file, std::function<bool(const std::string&)> save_func);
+    SaveDaemon(const std::string& file, std::function<bool(const std::string&)> save_func,
+               std::function<void(const std::string&, const std::string&)> event_publisher = nullptr);
     ~SaveDaemon();
     
     // Control methods

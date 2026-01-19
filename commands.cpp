@@ -266,6 +266,8 @@ std::string CommandProcessor::process_command(const std::shared_ptr<RespValue>& 
         return handle_script(cmd_args);
     } else if (upper_cmd == "CLUSTER") {
         return handle_cluster(cmd_args);
+    } else if (upper_cmd == "INFO") {
+        return handle_info(cmd_args);
     } else {
         return "-ERR Unknown command\r\n";
     }
@@ -1573,4 +1575,37 @@ std::string CommandProcessor::handle_cluster(const std::vector<std::shared_ptr<R
     }
 
     return "-ERR Unknown CLUSTER subcommand\r\n";
+}
+
+std::string CommandProcessor::handle_info(const std::vector<std::shared_ptr<RespValue>>& args) {
+    // Return server information including save daemon stats
+    std::string info;
+
+    // Server info
+    info += "# Server\r\n";
+    info += "redis_version:MinimalRedis-1.0\r\n";
+    info += "redis_mode:standalone\r\n";
+    info += "os:macOS\r\n";
+    info += "uptime_in_seconds:0\r\n"; // TODO: implement uptime tracking
+    info += "connected_clients:1\r\n"; // Simplified
+
+    // Memory info
+    info += "\n# Memory\r\n";
+    info += "used_memory:0\r\n"; // TODO: implement memory tracking
+    info += "total_system_memory:0\r\n";
+
+    // Stats
+    info += "\n# Stats\r\n";
+    info += "total_commands_processed:0\r\n"; // TODO: implement command counting
+
+    // Save daemon info (if available)
+    if (save_daemon_ptr) {
+        info += "\n# Save Daemon\r\n";
+        info += "save_daemon_running:" + std::string(save_daemon_ptr->is_running() ? "yes" : "no") + "\r\n";
+        info += "save_daemon_interval:" + std::to_string(save_daemon_ptr->get_interval().count()) + "\r\n";
+        info += "save_daemon_successful_saves:" + std::to_string(save_daemon_ptr->get_successful_saves()) + "\r\n";
+        info += "save_daemon_failed_saves:" + std::to_string(save_daemon_ptr->get_failed_saves()) + "\r\n";
+    }
+
+    return "$" + std::to_string(info.length()) + "\r\n" + info + "\r\n";
 }

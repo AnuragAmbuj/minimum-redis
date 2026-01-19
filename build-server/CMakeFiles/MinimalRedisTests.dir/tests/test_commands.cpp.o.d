@@ -1059,4 +1059,10 @@ CMakeFiles/MinimalRedisTests.dir/tests/test_commands.cpp.o: \
   /opt/homebrew/opt/lua/include/lua5.4/lua.h \
   /opt/homebrew/opt/lua/include/lua5.4/luaconf.h \
   /opt/homebrew/opt/lua/include/lua5.4/lauxlib.h \
-  /opt/homebrew/opt/lua/include/lua5.4/lualib.h
+  /opt/homebrew/opt/lua/include/lua5.4/lualib.h \
+  /Users/anuragambuj/CLionProjects/MinimalRedis/save_daemon.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/thread \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/this_thread.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/thread.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/jthread.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__stop_token/stop_source.h

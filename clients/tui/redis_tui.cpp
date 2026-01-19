@@ -244,6 +244,24 @@ private:
 
             std::cout << "  Total Commands: " << server_info["total_commands_processed"] << std::endl;
 
+            // Display SaveDaemon information if available
+            if (!server_info["save_daemon_running"].empty()) {
+                std::cout << "\n[SAVE] Persistence Status:" << std::endl;
+                std::cout << "  Daemon Running: " << server_info["save_daemon_running"] << std::endl;
+                std::cout << "  Save Interval: " << server_info["save_daemon_interval"] << " seconds" << std::endl;
+                std::cout << "  Successful Saves: " << server_info["save_daemon_successful_saves"] << std::endl;
+                std::cout << "  Failed Saves: " << server_info["save_daemon_failed_saves"] << std::endl;
+
+                // Show save status indicator
+                std::string status = server_info["save_daemon_running"];
+                if (status == "yes") {
+                    std::cout << "  Status: ✅ Active (Auto-saving every "
+                             << server_info["save_daemon_interval"] << "s)" << std::endl;
+                } else {
+                    std::cout << "  Status: ❌ Inactive" << std::endl;
+                }
+            }
+
             if (!memory_history.empty()) {
                 std::cout << "\n[DATA] Memory Usage Trend:" << std::endl;
                 double max_mem = *std::max_element(memory_history.begin(), memory_history.end());

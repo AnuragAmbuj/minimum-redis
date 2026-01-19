@@ -10,9 +10,9 @@
 #include "lua_scripting.h"
 #include <string>
 #include <queue>
-#include <functional>
 #include <unordered_map>
 #include <memory>
+#include "save_daemon.h"
 
 extern std::unordered_map<int, class CommandProcessor*> client_processors;
 
@@ -38,6 +38,7 @@ private:
 
     std::unique_ptr<LuaScriptingEngine> lua_engine;
     std::unordered_map<int, CommandProcessor*>* client_processors_ptr = nullptr;
+    SaveDaemon* save_daemon_ptr = nullptr;
 
     std::string handle_set(const std::vector<std::shared_ptr<RespValue>>& args);
     std::string handle_get(const std::vector<std::shared_ptr<RespValue>>& args);
@@ -110,9 +111,11 @@ private:
 
     // Cluster commands
     std::string handle_cluster(const std::vector<std::shared_ptr<RespValue>>& args);
+    std::string handle_info(const std::vector<std::shared_ptr<RespValue>>& args);
 
 public:
-    CommandProcessor(Database& database, int fd, int notify_fd, std::unordered_map<int, CommandProcessor*>* processors = nullptr) : db(database), client_fd(fd), notify_write_fd(notify_fd), client_processors_ptr(processors) {
+    CommandProcessor(Database& database, int fd, int notify_fd, std::unordered_map<int, CommandProcessor*>* processors = nullptr, SaveDaemon* save_daemon = nullptr)
+        : db(database), client_fd(fd), notify_write_fd(notify_fd), client_processors_ptr(processors), save_daemon_ptr(save_daemon) {
         lua_engine = std::make_unique<LuaScriptingEngine>(db);
     }
 

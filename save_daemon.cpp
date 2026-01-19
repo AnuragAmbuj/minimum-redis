@@ -2,8 +2,9 @@
 #include <iostream>
 #include <unistd.h>
 
-SaveDaemon::SaveDaemon(const std::string& file, std::function<bool(const std::string&)> save_func)
-    : db_file(file), save_function(save_func) {
+SaveDaemon::SaveDaemon(const std::string& file, std::function<bool(const std::string&)> save_func,
+                         std::function<void(const std::string&, const std::string&)> event_publisher)
+    : db_file(file), save_function(save_func), publish_event(std::move(event_publisher)) {
 }
 
 SaveDaemon::~SaveDaemon() {
@@ -68,18 +69,33 @@ void SaveDaemon::perform_save() {
         bool success = save_function(db_file);
         if (success) {
             successful_saves++;
-            std::cout << "[SaveDaemon] Database saved successfully (" 
+            std::cout << "[SaveDaemon] Database saved successfully ("
                      << successful_saves << " total)" << std::endl;
+
+            // Publish success event
+            if (publish_event) {
+                publish_event("__save_events__", "success:" + std::to_string(successful_saves));
+            }
         } else {
             failed_saves++;
-            std::cerr << "[SaveDaemon] Database save failed (" 
+            std::cerr << "[SaveDaemon] Database save failed ("
                      << failed_saves << " failures)" << std::endl;
-            
+
+            // Publish failure event
+            if (publish_event) {
+                publish_event("__save_events__", "failure:" + std::to_string(failed_saves));
+            }
+
             // Exponential backoff on failure (don't spam the logs)
             std::this_thread::sleep_for(std::chrono::seconds(5));
         }
     } catch (const std::exception& e) {
         failed_saves++;
         std::cerr << "[SaveDaemon] Exception during save: " << e.what() << std::endl;
+
+        // Publish exception event
+        if (publish_event) {
+            publish_event("__save_events__", "exception:" + std::string(e.what()));
+        }
     }
 }

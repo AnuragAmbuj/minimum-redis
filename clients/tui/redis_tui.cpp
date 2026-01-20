@@ -9,6 +9,7 @@
 #include <queue>
 #include <sstream>
 #include <cstring>
+#include <map>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -59,10 +60,11 @@ private:
         std::cout << "1. Command Interface  - Execute Redis commands" << std::endl;
         std::cout << "2. Data Browser       - View and browse keys" << std::endl;
         std::cout << "3. Server Monitor     - Real-time server stats" << std::endl;
-        std::cout << "4. Connection         - Connect/Disconnect" << std::endl;
-        std::cout << "5. Command History    - View previous commands" << std::endl;
+        std::cout << "4. Cluster Monitor    - Monitor cluster status" << std::endl;
+        std::cout << "5. Connection         - Connect/Disconnect" << std::endl;
+        std::cout << "6. Command History    - View previous commands" << std::endl;
         std::cout << "0. Exit" << std::endl;
-        std::cout << "\nChoose option (0-5): ";
+        std::cout << "\nChoose option (0-6): ";
     }
 
     void handle_command_interface() {
@@ -326,6 +328,86 @@ private:
         std::cin.get();
     }
 
+    void handle_cluster_monitor() {
+        while (true) {
+            display_header();
+            std::cout << "\n[CLUSTER] CLUSTER MONITOR" << std::endl;
+
+            // Get cluster information
+            client.send_command("CLUSTER INFO");
+            std::string cluster_info = client.get_response(2000);
+
+            client.send_command("CLUSTER NODES");
+            std::string cluster_nodes = client.get_response(2000);
+
+            if (cluster_info.find("-ERR") == std::string::npos) {
+                // Parse and display cluster information
+                std::cout << "[INFO] Cluster Status:" << std::endl;
+
+                // For MVP, just display the raw cluster info
+                // In a full implementation, we'd parse the RESP format properly
+                std::cout << cluster_info << std::endl;
+
+                // Display SaveDaemon info if available (simplified parsing)
+                if (cluster_info.find("save_daemon_running") != std::string::npos) {
+                    std::cout << "\n[SAVE] Persistence Status:" << std::endl;
+
+                    // Simple string extraction for MVP
+                    if (cluster_info.find("save_daemon_running:yes") != std::string::npos) {
+                        std::cout << "  Daemon: yes" << std::endl;
+                    } else if (cluster_info.find("save_daemon_running:no") != std::string::npos) {
+                        std::cout << "  Daemon: no" << std::endl;
+                    }
+
+                    // Extract interval
+                    size_t interval_pos = cluster_info.find("save_daemon_interval:");
+                    if (interval_pos != std::string::npos) {
+                        size_t end_pos = cluster_info.find("\r\n", interval_pos);
+                        if (end_pos != std::string::npos) {
+                            std::string interval = cluster_info.substr(interval_pos + 21, end_pos - interval_pos - 21);
+                            std::cout << "  Interval: " << interval << "s" << std::endl;
+                        }
+                    }
+
+                    // Extract successful saves
+                    size_t success_pos = cluster_info.find("save_daemon_successful_saves:");
+                    if (success_pos != std::string::npos) {
+                        size_t end_pos = cluster_info.find("\r\n", success_pos);
+                        if (end_pos != std::string::npos) {
+                            std::string saves = cluster_info.substr(success_pos + 28, end_pos - success_pos - 28);
+                            std::cout << "  Successful Saves: " << saves << std::endl;
+                        }
+                    }
+
+                    // Extract failed saves
+                    size_t fail_pos = cluster_info.find("save_daemon_failed_saves:");
+                    if (fail_pos != std::string::npos) {
+                        size_t end_pos = cluster_info.find("\r\n", fail_pos);
+                        if (end_pos != std::string::npos) {
+                            std::string fails = cluster_info.substr(fail_pos + 24, end_pos - fail_pos - 24);
+                            std::cout << "  Failed Saves: " << fails << std::endl;
+                        }
+                    }
+                }
+
+                // Display node information
+                std::cout << "\n[NODES] Cluster Topology:" << std::endl;
+                std::cout << cluster_nodes << std::endl;
+
+            } else {
+                std::cout << "[ERROR] Cluster information not available" << std::endl;
+                std::cout << "Make sure you're connected to a MinimalRedis cluster node" << std::endl;
+            }
+
+            std::cout << "\nPress Enter to refresh or 'b' for menu: ";
+            std::string input;
+            std::getline(std::cin, input);
+            if (input == "b") {
+                break;
+            }
+        }
+    }
+
 public:
     EnhancedRedisTUI(const std::string& host = "127.0.0.1", int port = 6379)
         : client(host, port) {}
@@ -359,16 +441,19 @@ public:
                     handle_server_monitor();
                     break;
                 case '4':
-                    handle_connection();
+                    handle_cluster_monitor();
                     break;
                 case '5':
+                    handle_connection();
+                    break;
+                case '6':
                     handle_history();
                     break;
                 case '0':
                     running = false;
                     break;
                 default:
-                    std::cout << "[ERROR] Invalid choice. Please select 0-5." << std::endl;
+                    std::cout << "[ERROR] Invalid choice. Please select 0-6." << std::endl;
                     std::cout << "Press Enter to continue...";
                     std::cin.get();
             }

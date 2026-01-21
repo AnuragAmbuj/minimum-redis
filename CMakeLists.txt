@@ -1,14 +1,30 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.16)
+
 project(MinimalRedis)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find GoogleTest
 find_package(GTest REQUIRED)
 
 # Find Lua
-set(LUA_INCLUDE_DIR /opt/homebrew/opt/lua/include/lua5.4)
-set(LUA_LIBRARIES /opt/homebrew/opt/lua/lib/liblua.5.4.dylib)
+find_package(PkgConfig REQUIRED)
+
+# Try different Lua versions in order of preference
+pkg_check_modules(LUA lua5.4)
+if(NOT LUA_FOUND)
+    pkg_check_modules(LUA lua5.3)
+endif()
+if(NOT LUA_FOUND)
+    pkg_check_modules(LUA lua)
+endif()
+if(NOT LUA_FOUND)
+    message(FATAL_ERROR "No Lua development package found. Please install lua5.4-dev, lua5.3-dev, or lua-dev")
+endif()
+
+include_directories(${LUA_INCLUDE_DIRS})
+link_directories(${LUA_LIBRARY_DIRS})
 
 # Enable testing
 enable_testing()
@@ -20,8 +36,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
 endif()
 
 # Main executable
-add_executable(MinimalRedis main.cpp resp.cpp db.cpp commands.cpp lua_scripting.cpp
-        resp.h db.h commands.h redis_value.h lua_scripting.h
+add_executable(MinimalRedis main.cpp resp.cpp db.cpp commands.cpp lua_scripting.cpp raft.cpp wal.cpp cluster_manager.cpp
+        resp.h db.h commands.h redis_value.h lua_scripting.h raft.h wal.h cluster_manager.h
         net/networks.h)
 
 # Test executable
@@ -30,8 +46,8 @@ add_executable(MinimalRedisTests
         tests/test_resp.cpp
         tests/test_database.cpp
         tests/test_commands.cpp
-        resp.cpp db.cpp commands.cpp lua_scripting.cpp
-        resp.h db.h commands.h redis_value.h lua_scripting.h
+        resp.cpp db.cpp commands.cpp lua_scripting.cpp raft.cpp wal.cpp cluster_manager.cpp
+        resp.h db.h commands.h redis_value.h lua_scripting.h raft.h wal.h cluster_manager.h
         net/networks.h)
 
 target_link_libraries(MinimalRedis ${LUA_LIBRARIES})

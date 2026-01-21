@@ -9,7 +9,9 @@
 #include <sys/socket.h>
 #include <thread>
 #include <unistd.h>
+#include <cstring>
 #include <unordered_map>
+#include <getopt.h>
 
 Database db;
 std::unordered_map<int, CommandProcessor*> client_processors;
@@ -141,7 +143,47 @@ void periodic_save() {
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    int port = DEFAULT_PORT;
+    bool cluster_enabled = false;
+    std::string node_id;
+
+    // Parse command line arguments
+    static struct option long_options[] = {
+        {"port", required_argument, 0, 'p'},
+        {"cluster-enabled", no_argument, 0, 'c'},
+        {"node-id", required_argument, 0, 'n'},
+        {0, 0, 0, 0}
+    };
+
+    int opt;
+    while ((opt = getopt_long(argc, argv, "p:cn:", long_options, nullptr)) != -1) {
+        switch (opt) {
+            case 'p':
+                port = std::atoi(optarg);
+                break;
+            case 'c':
+                cluster_enabled = true;
+                break;
+            case 'n':
+                node_id = optarg;
+                break;
+            default:
+                fprintf(stderr, "Usage: %s [--port PORT] [--cluster-enabled] [--node-id ID]\n", argv[0]);
+                return 1;
+        }
+    }
+
+    printf("Starting MinimalRedis server on port %d", port);
+    if (cluster_enabled) {
+        printf(" (cluster mode enabled");
+        if (!node_id.empty()) {
+            printf(", node ID: %s", node_id.c_str());
+        }
+        printf(")");
+    }
+    printf("\n");
+
     // Load database from file on startup
     if (db.load_rdb(DB_FILE)) {
         printf("Database loaded from RDB file\n");
@@ -164,7 +206,7 @@ int main() {
 
     struct sockaddr_in addr = {};
     addr.sin_family = AF_INET;
-    addr.sin_port = ntohs(DEFAULT_PORT);
+    addr.sin_port = ntohs(port);
     addr.sin_addr.s_addr = ntohl(INADDR_ANY);
 
     int rv = bind(fd, (const sockaddr *)&addr, sizeof(addr));
@@ -178,7 +220,7 @@ int main() {
         die("listen()");
     }
 
-        printf("MinimalRedis server listening on port %d\n", DEFAULT_PORT);
+        printf("MinimalRedis server listening on port %d\n", port);
 
     while (true) {
         struct sockaddr_in client_addr = {};

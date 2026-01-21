@@ -1,0 +1,111 @@
+version: '3.8'
+
+services:
+  node1:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: minimal-redis-node1
+    ports:
+      - "6379:6379"
+    environment:
+      - NODE_ID=node1
+      - CLUSTER_PORT=6379
+      - PEER_NODES=node1:6379,node2:6380,node3:6381
+      - REDIS_LEADER=true
+    command: ["/app/minimal-redis", "--port", "6379", "--cluster-enabled", "--node-id", "node1"]
+    networks:
+      - redis-cluster
+    volumes:
+      - node1-data:/app/data
+      - node1-logs:/app/logs
+      - node1-wal:/app/wal
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "echo", "PING", "|", "nc", "localhost", "6379"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  node2:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: minimal-redis-node2
+    ports:
+      - "6380:6380"
+    environment:
+      - NODE_ID=node2
+      - CLUSTER_PORT=6380
+      - PEER_NODES=node1:6379,node2:6380,node3:6381
+      - REDIS_LEADER=false
+    command: ["/app/minimal-redis", "--port", "6380", "--cluster-enabled", "--node-id", "node2"]
+    depends_on:
+      - node1
+    networks:
+      - redis-cluster
+    volumes:
+      - node2-data:/app/data
+      - node2-logs:/app/logs
+      - node2-wal:/app/wal
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "echo", "PING", "|", "nc", "localhost", "6380"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  node3:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: minimal-redis-node3
+    ports:
+      - "6381:6381"
+    environment:
+      - NODE_ID=node3
+      - CLUSTER_PORT=6381
+      - PEER_NODES=node1:6379,node2:6380,node3:6381
+      - REDIS_LEADER=false
+    command: ["/app/minimal-redis", "--port", "6381", "--cluster-enabled", "--node-id", "node3"]
+    depends_on:
+      - node1
+    networks:
+      - redis-cluster
+    volumes:
+      - node3-data:/app/data
+      - node3-logs:/app/logs
+      - node3-wal:/app/wal
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "echo", "PING", "|", "nc", "localhost", "6381"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  node1-data:
+    driver: local
+  node1-logs:
+    driver: local
+  node1-wal:
+    driver: local
+  node2-data:
+    driver: local
+  node2-logs:
+    driver: local
+  node2-wal:
+    driver: local
+  node3-data:
+    driver: local
+  node3-logs:
+    driver: local
+  node3-wal:
+    driver: local
+
+networks:
+  redis-cluster:
+    driver: bridge

@@ -343,8 +343,10 @@ std::string CommandProcessor::handle_save(const std::vector<std::shared_ptr<Resp
         return "-ERR SAVE requires no arguments\r\n";
     }
 
-    const std::string filename = "minimalredis.db";
-    if (db.save_to_file(filename)) {
+    // Use the same RDB file as persistence system
+    const std::string filename = "minimalredis.rdb";
+    bool result = db.save_rdb(filename);
+    if (result) {
         return "+OK\r\n";
     } else {
         return "-ERR Failed to save database\r\n";

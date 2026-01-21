@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <atomic>
+#include <functional>
 
 // RAFT consensus states
 enum class RaftState {

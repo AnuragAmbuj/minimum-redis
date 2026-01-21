@@ -39,7 +39,7 @@ RUN useradd -r -s /bin/false redis
 RUN mkdir -p /app/data /app/logs /app/wal
 
 # Copy binary from builder stage
-COPY --from=builder /app/build-server/MinimalRedis /app/minimal-redis
+COPY --from=builder /app/build/MinimalRedis /app/minimal-redis
 
 # Set ownership
 RUN chown -R redis:redis /app
@@ -55,7 +55,4 @@ EXPOSE 6379
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD /app/minimal-redis --health-check || exit 1
-
-# Default command with cluster support
-CMD ["/app/minimal-redis", "--cluster-enabled", "--data-dir", "/app/data", "--log-dir", "/app/logs"]
+    CMD /app/minimal-redis --help 2>/dev/null || exit 1

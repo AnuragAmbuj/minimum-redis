@@ -1,14 +1,30 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.16)
+
 project(MinimalRedis)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find GoogleTest
 find_package(GTest REQUIRED)
 
 # Find Lua
-set(LUA_INCLUDE_DIR /opt/homebrew/opt/lua/include/lua5.4)
-set(LUA_LIBRARIES /opt/homebrew/opt/lua/lib/liblua.5.4.dylib)
+find_package(PkgConfig REQUIRED)
+
+# Try different Lua versions in order of preference
+pkg_check_modules(LUA lua5.4)
+if(NOT LUA_FOUND)
+    pkg_check_modules(LUA lua5.3)
+endif()
+if(NOT LUA_FOUND)
+    pkg_check_modules(LUA lua)
+endif()
+if(NOT LUA_FOUND)
+    message(FATAL_ERROR "No Lua development package found. Please install lua5.4-dev, lua5.3-dev, or lua-dev")
+endif()
+
+include_directories(${LUA_INCLUDE_DIRS})
+link_directories(${LUA_LIBRARY_DIRS})
 
 # Enable testing
 enable_testing()

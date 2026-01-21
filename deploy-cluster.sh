@@ -114,6 +114,7 @@ start_node() {
         -e CLUSTER_PORT="$port" \
         -e PEER_NODES="node1:$((BASE_PORT)),node2:$((BASE_PORT+1)),node3:$((BASE_PORT+2))" \
         "$DOCKER_IMAGE" \
+        /app/minimal-redis \
         --port "$port" \
         --cluster-enabled \
         --node-id "node$node_id"

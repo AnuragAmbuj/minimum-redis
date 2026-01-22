@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/MinimalRedis.dir/cluster.cpp.o"
+  "CMakeFiles/MinimalRedis.dir/cluster.cpp.o.d"
   "CMakeFiles/MinimalRedis.dir/commands.cpp.o"
   "CMakeFiles/MinimalRedis.dir/commands.cpp.o.d"
   "CMakeFiles/MinimalRedis.dir/db.cpp.o"
@@ -9,6 +11,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/MinimalRedis.dir/main.cpp.o.d"
   "CMakeFiles/MinimalRedis.dir/resp.cpp.o"
   "CMakeFiles/MinimalRedis.dir/resp.cpp.o.d"
+  "CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o"
+  "CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o.d"
   "MinimalRedis"
   "MinimalRedis.pdb"
 )

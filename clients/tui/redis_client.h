@@ -32,9 +32,9 @@ public:
     bool connect() { return connected = connect_to_server(); }
     void stop();
 
-    bool is_connected() const { return connected; }
-    std::string get_host() const { return host; }
-    int get_port() const { return port; }
+    bool is_connected() const noexcept { return connected; }
+    std::string get_host() const noexcept { return host; }
+    int get_port() const noexcept { return port; }
 
     bool send_command(const std::string& command);
     std::string get_response(int timeout_ms = 5000);

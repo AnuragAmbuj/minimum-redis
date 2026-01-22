@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/MinimalRedisTests.dir/cluster.cpp.o"
+  "CMakeFiles/MinimalRedisTests.dir/cluster.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/commands.cpp.o"
   "CMakeFiles/MinimalRedisTests.dir/commands.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/db.cpp.o"
@@ -7,6 +9,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/MinimalRedisTests.dir/lua_scripting.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/resp.cpp.o"
   "CMakeFiles/MinimalRedisTests.dir/resp.cpp.o.d"
+  "CMakeFiles/MinimalRedisTests.dir/save_daemon.cpp.o"
+  "CMakeFiles/MinimalRedisTests.dir/save_daemon.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/tests/test_commands.cpp.o"
   "CMakeFiles/MinimalRedisTests.dir/tests/test_commands.cpp.o.d"
   "CMakeFiles/MinimalRedisTests.dir/tests/test_database.cpp.o"

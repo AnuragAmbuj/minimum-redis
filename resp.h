@@ -40,7 +40,7 @@ public:
     RespParser(const char* buffer, size_t length) : buf(buffer), len(length), pos(0) {}
 
     std::shared_ptr<RespValue> parse();
-    size_t get_consumed_bytes() const { return pos; }
+    size_t get_consumed_bytes() const noexcept { return pos; }
 
 private:
     std::shared_ptr<RespValue> parse_simple_string();

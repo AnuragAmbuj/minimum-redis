@@ -142,13 +142,43 @@ CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/anuragambuj/CLionProjects/MinimalRedis/lua_scripting.cpp -o CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.s
 
+CMakeFiles/MinimalRedis.dir/cluster.cpp.o: CMakeFiles/MinimalRedis.dir/flags.make
+CMakeFiles/MinimalRedis.dir/cluster.cpp.o: /Users/anuragambuj/CLionProjects/MinimalRedis/cluster.cpp
+CMakeFiles/MinimalRedis.dir/cluster.cpp.o: CMakeFiles/MinimalRedis.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/MinimalRedis.dir/cluster.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MinimalRedis.dir/cluster.cpp.o -MF CMakeFiles/MinimalRedis.dir/cluster.cpp.o.d -o CMakeFiles/MinimalRedis.dir/cluster.cpp.o -c /Users/anuragambuj/CLionProjects/MinimalRedis/cluster.cpp
+
+CMakeFiles/MinimalRedis.dir/cluster.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/MinimalRedis.dir/cluster.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/anuragambuj/CLionProjects/MinimalRedis/cluster.cpp > CMakeFiles/MinimalRedis.dir/cluster.cpp.i
+
+CMakeFiles/MinimalRedis.dir/cluster.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MinimalRedis.dir/cluster.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/anuragambuj/CLionProjects/MinimalRedis/cluster.cpp -o CMakeFiles/MinimalRedis.dir/cluster.cpp.s
+
+CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o: CMakeFiles/MinimalRedis.dir/flags.make
+CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o: /Users/anuragambuj/CLionProjects/MinimalRedis/save_daemon.cpp
+CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o: CMakeFiles/MinimalRedis.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o -MF CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o.d -o CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o -c /Users/anuragambuj/CLionProjects/MinimalRedis/save_daemon.cpp
+
+CMakeFiles/MinimalRedis.dir/save_daemon.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/MinimalRedis.dir/save_daemon.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/anuragambuj/CLionProjects/MinimalRedis/save_daemon.cpp > CMakeFiles/MinimalRedis.dir/save_daemon.cpp.i
+
+CMakeFiles/MinimalRedis.dir/save_daemon.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/MinimalRedis.dir/save_daemon.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/anuragambuj/CLionProjects/MinimalRedis/save_daemon.cpp -o CMakeFiles/MinimalRedis.dir/save_daemon.cpp.s
+
 # Object files for target MinimalRedis
 MinimalRedis_OBJECTS = \
 "CMakeFiles/MinimalRedis.dir/main.cpp.o" \
 "CMakeFiles/MinimalRedis.dir/resp.cpp.o" \
 "CMakeFiles/MinimalRedis.dir/db.cpp.o" \
 "CMakeFiles/MinimalRedis.dir/commands.cpp.o" \
-"CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.o"
+"CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.o" \
+"CMakeFiles/MinimalRedis.dir/cluster.cpp.o" \
+"CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o"
 
 # External object files for target MinimalRedis
 MinimalRedis_EXTERNAL_OBJECTS =
@@ -158,10 +188,12 @@ MinimalRedis: CMakeFiles/MinimalRedis.dir/resp.cpp.o
 MinimalRedis: CMakeFiles/MinimalRedis.dir/db.cpp.o
 MinimalRedis: CMakeFiles/MinimalRedis.dir/commands.cpp.o
 MinimalRedis: CMakeFiles/MinimalRedis.dir/lua_scripting.cpp.o
+MinimalRedis: CMakeFiles/MinimalRedis.dir/cluster.cpp.o
+MinimalRedis: CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o
 MinimalRedis: CMakeFiles/MinimalRedis.dir/build.make
 MinimalRedis: /opt/homebrew/opt/lua/lib/liblua.5.4.dylib
 MinimalRedis: CMakeFiles/MinimalRedis.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable MinimalRedis"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/anuragambuj/CLionProjects/MinimalRedis/build-server/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable MinimalRedis"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/MinimalRedis.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

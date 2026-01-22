@@ -209,6 +209,33 @@ clients/tui/redis_client.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisClientTests.dir/build.make CMakeFiles/MinimalRedisClientTests.dir/clients/tui/redis_client.cpp.s
 .PHONY : clients/tui/redis_client.cpp.s
 
+cluster.o: cluster.cpp.o
+.PHONY : cluster.o
+
+# target to build an object file
+cluster.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/cluster.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/cluster.cpp.o
+.PHONY : cluster.cpp.o
+
+cluster.i: cluster.cpp.i
+.PHONY : cluster.i
+
+# target to preprocess a source file
+cluster.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/cluster.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/cluster.cpp.i
+.PHONY : cluster.cpp.i
+
+cluster.s: cluster.cpp.s
+.PHONY : cluster.s
+
+# target to generate assembly for a file
+cluster.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/cluster.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/cluster.cpp.s
+.PHONY : cluster.cpp.s
+
 commands.o: commands.cpp.o
 .PHONY : commands.o
 
@@ -340,6 +367,33 @@ resp.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/resp.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/resp.cpp.s
 .PHONY : resp.cpp.s
+
+save_daemon.o: save_daemon.cpp.o
+.PHONY : save_daemon.o
+
+# target to build an object file
+save_daemon.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/save_daemon.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/save_daemon.cpp.o
+.PHONY : save_daemon.cpp.o
+
+save_daemon.i: save_daemon.cpp.i
+.PHONY : save_daemon.i
+
+# target to preprocess a source file
+save_daemon.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/save_daemon.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/save_daemon.cpp.i
+.PHONY : save_daemon.cpp.i
+
+save_daemon.s: save_daemon.cpp.s
+.PHONY : save_daemon.s
+
+# target to generate assembly for a file
+save_daemon.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedis.dir/build.make CMakeFiles/MinimalRedis.dir/save_daemon.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/MinimalRedisTests.dir/build.make CMakeFiles/MinimalRedisTests.dir/save_daemon.cpp.s
+.PHONY : save_daemon.cpp.s
 
 tests/test_client.o: tests/test_client.cpp.o
 .PHONY : tests/test_client.o
@@ -481,6 +535,9 @@ help:
 	@echo "... clients/tui/redis_client.o"
 	@echo "... clients/tui/redis_client.i"
 	@echo "... clients/tui/redis_client.s"
+	@echo "... cluster.o"
+	@echo "... cluster.i"
+	@echo "... cluster.s"
 	@echo "... commands.o"
 	@echo "... commands.i"
 	@echo "... commands.s"
@@ -496,6 +553,9 @@ help:
 	@echo "... resp.o"
 	@echo "... resp.i"
 	@echo "... resp.s"
+	@echo "... save_daemon.o"
+	@echo "... save_daemon.i"
+	@echo "... save_daemon.s"
 	@echo "... tests/test_client.o"
 	@echo "... tests/test_client.i"
 	@echo "... tests/test_client.s"

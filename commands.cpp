@@ -3,6 +3,7 @@
 //
 
 #include "commands.h"
+#include "cluster.h"
 #include <algorithm>
 #include <unistd.h>
 
@@ -123,6 +124,23 @@ std::string CommandProcessor::process_command(const std::shared_ptr<RespValue>& 
 
         transaction_queue.push(tx_cmd);
         return "+QUEUED\r\n";
+    }
+
+    // Check if this is a key-based command that needs routing in cluster mode
+    if (cluster_config.enabled && cmd_args.size() > 1 &&
+        (upper_cmd == "SET" || upper_cmd == "GET" || upper_cmd == "DEL" || upper_cmd == "EXISTS")) {
+        if (cmd_args[1]->type == RespType::BulkString) {
+            std::string key = cmd_args[1]->str_val;
+            auto responsible_node = cluster_config.get_node_for_key(key);
+
+            // If this key doesn't belong to this node, redirect
+            if (responsible_node && responsible_node->node_id != cluster_config.my_node_id) {
+                std::string redirect_response = "-MOVED " +
+                    std::to_string(std::hash<std::string>{}(key) % cluster_config.total_slots) +
+                    " " + responsible_node->ip_address + ":" + std::to_string(responsible_node->port) + "\r\n";
+                return redirect_response;
+            }
+        }
     }
 
     // Execute command immediately (not in transaction)
@@ -246,6 +264,10 @@ std::string CommandProcessor::process_command(const std::shared_ptr<RespValue>& 
         return handle_evalsha(cmd_args);
     } else if (upper_cmd == "SCRIPT") {
         return handle_script(cmd_args);
+    } else if (upper_cmd == "CLUSTER") {
+        return handle_cluster(cmd_args);
+    } else if (upper_cmd == "INFO") {
+        return handle_info(cmd_args);
     } else {
         return "-ERR Unknown command\r\n";
     }
@@ -343,8 +365,10 @@ std::string CommandProcessor::handle_save(const std::vector<std::shared_ptr<Resp
         return "-ERR SAVE requires no arguments\r\n";
     }
 
-    const std::string filename = "minimalredis.db";
-    if (db.save_to_file(filename)) {
+    // Use the same RDB file as persistence system
+    const std::string filename = "minimalredis.rdb";
+    bool result = db.save_rdb(filename);
+    if (result) {
         return "+OK\r\n";
     } else {
         return "-ERR Failed to save database\r\n";
@@ -1495,4 +1519,93 @@ std::string CommandProcessor::handle_script(const std::vector<std::shared_ptr<Re
     }
 
     return "-ERR Unknown SCRIPT subcommand\r\n";
+}
+
+std::string CommandProcessor::handle_cluster(const std::vector<std::shared_ptr<RespValue>>& args) {
+    if (args.size() < 2) {
+        return "-ERR CLUSTER requires at least 1 subcommand\r\n";
+    }
+
+    if (args[1]->type != RespType::BulkString) {
+        return "-ERR CLUSTER subcommand must be a bulk string\r\n";
+    }
+
+    std::string subcmd = args[1]->str_val;
+
+    if (subcmd == "NODES") {
+        // Return cluster node information as bulk string
+        std::string nodes_info;
+        for (auto& node : cluster_config.nodes) {
+            nodes_info += node->node_id + " " + node->ip_address + ":" + std::to_string(node->port);
+            if (node->is_master) {
+                nodes_info += " master";
+            } else {
+                nodes_info += " slave";
+            }
+            nodes_info += " - 0 0 0 connected";
+            for (int slot : node->assigned_slots) {
+                nodes_info += " " + std::to_string(slot);
+            }
+            nodes_info += "\r\n";
+        }
+        return "$" + std::to_string(nodes_info.length()) + "\r\n" + nodes_info + "\r\n";
+    } else if (subcmd == "INFO") {
+        // Return basic cluster info as bulk string
+        std::string info = "cluster_state:ok\r\n";
+        info += "cluster_slots_assigned:" + std::to_string(cluster_config.total_slots) + "\r\n";
+        info += "cluster_slots_ok:" + std::to_string(cluster_config.total_slots) + "\r\n";
+        info += "cluster_size:" + std::to_string(cluster_config.nodes.size()) + "\r\n";
+        return "$" + std::to_string(info.length()) + "\r\n" + info + "\r\n";
+    } else if (subcmd == "SLOTS") {
+        // Return slot information
+        std::string response = "*" + std::to_string(cluster_config.total_slots) + "\r\n";
+        for (int slot = 0; slot < cluster_config.total_slots; ++slot) {
+            auto node = cluster_config.nodes[slot % cluster_config.nodes.size()];
+            response += "*3\r\n";
+            response += ":" + std::to_string(slot) + "\r\n";
+            response += ":" + std::to_string(slot) + "\r\n";
+            response += "*3\r\n";
+            response += "$" + std::to_string(node->ip_address.length()) + "\r\n";
+            response += node->ip_address + "\r\n";
+            response += ":" + std::to_string(node->port) + "\r\n";
+            response += "$" + std::to_string(node->node_id.length()) + "\r\n";
+            response += node->node_id + "\r\n";
+        }
+        return response;
+    }
+
+    return "-ERR Unknown CLUSTER subcommand\r\n";
+}
+
+std::string CommandProcessor::handle_info(const std::vector<std::shared_ptr<RespValue>>& args) {
+    // Return server information including save daemon stats
+    std::string info;
+
+    // Server info
+    info += "# Server\r\n";
+    info += "redis_version:MinimalRedis-1.0\r\n";
+    info += "redis_mode:standalone\r\n";
+    info += "os:macOS\r\n";
+    info += "uptime_in_seconds:0\r\n"; // TODO: implement uptime tracking
+    info += "connected_clients:1\r\n"; // Simplified
+
+    // Memory info
+    info += "\n# Memory\r\n";
+    info += "used_memory:0\r\n"; // TODO: implement memory tracking
+    info += "total_system_memory:0\r\n";
+
+    // Stats
+    info += "\n# Stats\r\n";
+    info += "total_commands_processed:0\r\n"; // TODO: implement command counting
+
+    // Save daemon info (if available)
+    if (save_daemon_ptr) {
+        info += "\n# Save Daemon\r\n";
+        info += "save_daemon_running:" + std::string(save_daemon_ptr->is_running() ? "yes" : "no") + "\r\n";
+        info += "save_daemon_interval:" + std::to_string(save_daemon_ptr->get_interval().count()) + "\r\n";
+        info += "save_daemon_successful_saves:" + std::to_string(save_daemon_ptr->get_successful_saves()) + "\r\n";
+        info += "save_daemon_failed_saves:" + std::to_string(save_daemon_ptr->get_failed_saves()) + "\r\n";
+    }
+
+    return "$" + std::to_string(info.length()) + "\r\n" + info + "\r\n";
 }

@@ -93,7 +93,7 @@ public:
     bool save_rdb(const std::string& filename);
     bool load_rdb(const std::string& filename);
 
-    PubSubManager& get_pubsub() { return pubsub; }
+    PubSubManager& get_pubsub() noexcept { return pubsub; }
 };
 
 #endif //MINIMALREDIS_DB_H

@@ -4,11 +4,14 @@
 
 #include "db.h"
 #include "redis_value.h"
+#include <array>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <unistd.h>
 
 // String operations
 bool Database::set(const std::string& key, const std::string& value) {
@@ -729,6 +732,7 @@ bool Database::save_rdb(const std::string& filename) {
 
     file.write(reinterpret_cast<const char*>(&RDB_OPCODE_EOF), 1);
 
+    file.flush();  // Ensure all data is written
     file.close();
     return true;
 }
@@ -739,8 +743,8 @@ bool Database::load_rdb(const std::string& filename) {
         return false;
     }
 
-    char magic[5];
-    if (!file.read(magic, 5) || strncmp(magic, RDB_MAGIC, 5) != 0) {
+    std::array<char, 5> magic;
+    if (!file.read(magic.data(), 5) || strncmp(magic.data(), RDB_MAGIC, 5) != 0) {
         return false;
     }
 

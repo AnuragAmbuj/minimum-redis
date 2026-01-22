@@ -1,6 +1,10 @@
 #include "db.h"
+#include "cluster.h"
 #include "commands.h"
 #include "resp.h"
+#include "save_daemon.h"
+#include <array>
+#include <vector>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
@@ -29,8 +33,8 @@ void die(const char *msg) {
 }
 
 void handle_client(int client_fd) {
-    int pipe_fds[2];
-    if (pipe(pipe_fds) == -1) {
+    std::array<int, 2> pipe_fds;
+    if (pipe(pipe_fds.data()) == -1) {
         return;
     }
     int notify_read_fd = pipe_fds[0];
@@ -40,7 +44,7 @@ void handle_client(int client_fd) {
     client_processors[client_fd] = &processor;
 
     // Use constexpr BUFFER_SIZE defined at top of file
-    std::unique_ptr<char[]> buf(new char[BUFFER_SIZE]);
+    std::vector<char> buf(BUFFER_SIZE);
     size_t buf_pos = 0;
 
     fd_set read_fds;
@@ -69,7 +73,7 @@ void handle_client(int client_fd) {
             }
         }
         if (FD_ISSET(client_fd, &read_fds)) {
-            ssize_t n = read(client_fd, buf.get() + buf_pos, BUFFER_SIZE - buf_pos - 1);
+            ssize_t n = read(client_fd, buf.data() + buf_pos, BUFFER_SIZE - buf_pos - 1);
             if (n <= 0) {
                 break;  // Connection closed or error
             }
@@ -80,7 +84,7 @@ void handle_client(int client_fd) {
             size_t processed_pos = 0;
             while (processed_pos < buf_pos) {
                 try {
-                    RespParser parser(buf.get() + processed_pos, buf_pos - processed_pos);
+                    RespParser parser(buf.data() + processed_pos, buf_pos - processed_pos);
                     auto command = parser.parse();
 
                     std::string response = processor.process_command(command);
@@ -108,7 +112,7 @@ void handle_client(int client_fd) {
 
             // Move remaining unprocessed data to the beginning of buffer
             if (processed_pos > 0 && processed_pos < buf_pos) {
-                memmove(buf.get(), buf.get() + processed_pos, buf_pos - processed_pos);
+                memmove(buf.data(), buf.data() + processed_pos, buf_pos - processed_pos);
                 buf_pos -= processed_pos;
             } else if (processed_pos == buf_pos) {
                 buf_pos = 0;  // All data processed
@@ -130,18 +134,13 @@ cleanup:
     close(notify_write_fd);
 }
 
-void periodic_save() {
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::seconds(30)); // Save every 30 seconds
-        if (db.save_rdb(DB_FILE)) {
-            printf("Database saved to RDB successfully\n");
-        } else {
-            printf("Failed to save database to RDB\n");
-        }
-    }
-}
+// SaveDaemon instance for periodic saves
+std::unique_ptr<SaveDaemon> save_daemon;
 
-int main() {
+auto main() -> int {
+    // Initialize cluster configuration for MVC demo
+    initialize_cluster_mvc();
+
     // Load database from file on startup
     if (db.load_rdb(DB_FILE)) {
         printf("Database loaded from RDB file\n");
@@ -149,9 +148,12 @@ int main() {
         printf("No existing RDB file found, starting fresh\n");
     }
 
-    // Start periodic save thread
-    std::thread save_thread(periodic_save);
-    save_thread.detach();
+    // Initialize and start save daemon
+    save_daemon = std::make_unique<SaveDaemon>(DB_FILE, [](const std::string& file) {
+        return db.save_rdb(file);
+    });
+    save_daemon->start();
+    printf("Save daemon started (interval: %lld seconds)\n", save_daemon->get_interval().count());
 
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
@@ -167,7 +169,7 @@ int main() {
     addr.sin_port = ntohs(DEFAULT_PORT);
     addr.sin_addr.s_addr = ntohl(INADDR_ANY);
 
-    int rv = bind(fd, (const sockaddr *)&addr, sizeof(addr));
+    int rv = bind(fd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr));
 
     if (rv) {
         die("bind()");
@@ -184,7 +186,7 @@ int main() {
         struct sockaddr_in client_addr = {};
         socklen_t client_addr_len = sizeof(client_addr);
 
-        int client_fd = accept(fd, (struct sockaddr *)&client_addr, &client_addr_len);
+        int client_fd = accept(fd, reinterpret_cast<struct sockaddr *>(&client_addr), &client_addr_len);
 
         if (client_fd < 0) {
             fprintf(stderr, "Accept failed\n");
@@ -193,12 +195,20 @@ int main() {
 
         printf("New client connection\n");
         // Handle client connection in a new thread
-        std::thread client_thread([client_fd]() {
+        std::thread client_thread([client_fd]() -> void {
             handle_client(client_fd);
             close(client_fd);
         });
-        client_thread.detach();  // Let thread run independently
+        client_thread.detach(); // Let thread run independently
         printf("Client connection closed\n");
     }
+
+    // Cleanup save daemon
+    if (save_daemon) {
+        printf("Stopping save daemon...\n");
+        save_daemon->stop();
+        printf("Save daemon stopped\n");
+    }
+
     return 0;
 }
